@@ -1,0 +1,119 @@
+---
+import { comboKeys, risk, riskInfo, note, type Risk } from '../data/interactions';
+
+const cells = comboKeys.map((a) => comboKeys.map((b) => (a.key === b.key ? null : risk(a.key, b.key))));
+---
+<div class="mx-wrap">
+  <div class="legend">
+    {(Object.keys(riskInfo) as Risk[]).map((k) => (
+      <button class="lg" data-risk={k} style={`--c:${riskInfo[k].color}`} type="button">
+        <i></i>{riskInfo[k].label}
+      </button>
+    ))}
+  </div>
+
+  <div class="scroller">
+    <table class="mx" id="mx">
+      <thead>
+        <tr>
+          <th class="corner"></th>
+          {comboKeys.map((k, j) => <th class="col" data-col={j}><span>{k.label}</span></th>)}
+        </tr>
+      </thead>
+      <tbody>
+        {comboKeys.map((a, i) => (
+          <tr>
+            <th class="rowh" data-row={i}>{a.label}</th>
+            {comboKeys.map((b, j) => {
+              const r = cells[i][j];
+              if (!r) return <td class="self" data-row={i} data-col={j}>×</td>;
+              return (
+                <td
+                  data-row={i}
+                  data-col={j}
+                  data-risk={r}
+                  data-a={a.label}
+                  data-b={b.label}
+                  data-note={note(a.key, b.key) ?? ''}
+                  style={`--c:${riskInfo[r].color}`}
+                  tabindex="0"
+                >{riskInfo[r].short}</td>
+              );
+            })}
+          </tr>
+        ))}
+      </tbody>
+    </table>
+  </div>
+
+  <aside class="info" id="mx-info" aria-live="polite">
+    <span class="label">Selecciona una celda</span>
+    <div class="pair"><span id="mx-a">—</span><span class="x">+</span><span id="mx-b">—</span></div>
+    <div class="verdict" id="mx-v"></div>
+    <p id="mx-t">Pasa el cursor o pulsa sobre una casilla para ver el nivel de riesgo y su explicación.</p>
+  </aside>
+</div>
+
+<script define:vars={{ riskInfo }}>
+  const table = document.getElementById('mx');
+  const $ = (id) => document.getElementById(id);
+  let locked = null;
+
+  function show(td) {
+    if (!td || !td.dataset.risk) return;
+    const info = riskInfo[td.dataset.risk];
+    $('mx-a').textContent = td.dataset.a;
+    $('mx-b').textContent = td.dataset.b;
+    $('mx-v').textContent = info.label;
+    $('mx-v').style.color = info.color;
+    $('mx-t').textContent = td.dataset.note || info.text;
+    table.querySelectorAll('.hl').forEach((el) => el.classList.remove('hl'));
+    table.querySelectorAll(`[data-row="${td.dataset.row}"], [data-col="${td.dataset.col}"]`).forEach((el) => el.classList.add('hl'));
+  }
+  table.addEventListener('mouseover', (e) => { if (!locked) show(e.target.closest('td')); });
+  table.addEventListener('focusin', (e) => show(e.target.closest('td')));
+  table.addEventListener('click', (e) => {
+    const td = e.target.closest('td[data-risk]');
+    if (!td) return;
+    if (locked) locked.classList.remove('lock');
+    locked = locked === td ? null : td;
+    if (locked) locked.classList.add('lock');
+    show(td);
+  });
+
+  document.querySelectorAll('.lg').forEach((b) => {
+    b.addEventListener('click', () => {
+      const on = b.classList.toggle('on');
+      document.querySelectorAll('.lg').forEach((x) => x !== b && x.classList.remove('on'));
+      table.classList.toggle('filtering', on);
+      table.dataset.filter = on ? b.dataset.risk : '';
+      table.querySelectorAll('td[data-risk]').forEach((td) => td.classList.toggle('dim', on && td.dataset.risk !== b.dataset.risk));
+    });
+  });
+</script>
+
+<style>
+  .mx-wrap { display: grid; grid-template-columns: 1fr 300px; gap: 24px; align-items: start; }
+  .legend { grid-column: 1 / -1; display: flex; flex-wrap: wrap; gap: 8px; }
+  .lg { display: inline-flex; align-items: center; gap: 8px; background: transparent; border: 1px solid var(--line-2); color: var(--fg); font-family: var(--mono); font-size: 11px; padding: 6px 10px; cursor: pointer; letter-spacing: 0.04em; }
+  .lg i { width: 12px; height: 12px; background: var(--c); }
+  .lg:hover, .lg.on { border-color: var(--c); color: var(--c); }
+  .scroller { overflow: auto; max-width: 100%; border: 1px solid var(--line); max-height: 82vh; }
+  .mx { border-collapse: separate; border-spacing: 2px; font-size: 10px; background: var(--bg); }
+  .mx th { font-weight: 400; color: var(--mute); text-transform: uppercase; letter-spacing: 0.06em; background: var(--bg); }
+  .corner { position: sticky; left: 0; top: 0; z-index: 3; }
+  .col { position: sticky; top: 0; z-index: 2; height: 120px; vertical-align: bottom; padding: 4px 0; }
+  .col span { writing-mode: vertical-rl; transform: rotate(180deg); white-space: nowrap; display: inline-block; }
+  .rowh { position: sticky; left: 0; z-index: 1; text-align: right; padding: 0 10px 0 6px; white-space: nowrap; }
+  .mx td { width: 38px; min-width: 38px; height: 30px; text-align: center; color: #000; font-weight: 700; background: var(--c); cursor: pointer; transition: opacity 0.15s, outline 0.1s; letter-spacing: 0.02em; }
+  .mx td.self { background: var(--bg-3); color: var(--dim); cursor: default; }
+  .mx td:hover, .mx td:focus, .mx td.lock { outline: 2px solid var(--fg); outline-offset: 1px; z-index: 1; position: relative; }
+  .mx th.hl { color: var(--acid); }
+  .mx td.dim { opacity: 0.08; }
+  .info { position: sticky; top: 80px; border: 1px solid var(--line); background: var(--bg-2); padding: 20px; min-height: 260px; }
+  .pair { font-family: var(--display); font-weight: 900; font-stretch: 125%; text-transform: uppercase; font-size: 24px; line-height: 1; margin: 14px 0; display: flex; flex-direction: column; gap: 4px; }
+  .x { color: var(--dim); font-size: 16px; }
+  .verdict { font-size: 13px; text-transform: uppercase; letter-spacing: 0.12em; margin-bottom: 10px; }
+  .info p { color: var(--mute); margin: 0; font-size: 13px; }
+  @media (max-width: 960px) { .mx-wrap { grid-template-columns: 1fr; } .info { position: static; min-height: 0; } }
+</style>

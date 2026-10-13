@@ -1,0 +1,91 @@
+---
+import Layout from '../../layouts/Layout.astro';
+import Wheel from '../../components/Wheel.astro';
+import { families } from '../../data/families';
+import { substances } from '../../data';
+---
+<Layout title="Familias" description="Las nueve familias de sustancias psicoactivas, su mecanismo y su diana cerebral.">
+  <section class="wrap head">
+    <span class="label">Taxonomía / {families.length} familias</span>
+    <h1>Familias</h1>
+    <p class="lede">Las sustancias se agrupan por su efecto predominante y su mecanismo de acción. Esta clasificación farmacológica es la que se usa en psicofarmacología y en los servicios de reducción de riesgos.</p>
+  </section>
+
+  <section class="section">
+    <div class="wrap">
+      <div class="section-head">
+        <span class="idx">01 / MAPA DE DIANAS</span>
+        <div><h2>Familia → diana cerebral</h2><p>Esquema de la diana molecular principal de cada familia y el neurotransmisor implicado.</p></div>
+      </div>
+      <div class="map">
+        <svg viewBox="0 0 1000 560" role="img" aria-label="Diagrama que relaciona cada familia con su diana molecular">
+          {families.map((f, k) => {
+            const y = 30 + k * 60;
+            const ty = 30 + k * 60;
+            return (
+              <a href={`/familias/${f.id}`}>
+                <g class="lnk">
+                  <rect x="0" y={y - 18} width="260" height="36" fill="#0f0f0f" stroke={f.color} />
+                  <text x="14" y={y + 5} class="fn" fill={f.color}>{f.code}</text>
+                  <text x="56" y={y + 5} class="fl">{f.name.toUpperCase()}</text>
+                  <path d={`M260 ${y} C 450 ${y}, 550 ${ty}, 700 ${ty}`} fill="none" stroke={f.color} stroke-opacity="0.7" />
+                  <circle cx="700" cy={ty} r="5" fill={f.color} />
+                  <text x="716" y={ty + 5} class="tl">{f.targetLabel}</text>
+                </g>
+              </a>
+            );
+          })}
+        </svg>
+      </div>
+    </div>
+  </section>
+
+  <section class="section">
+    <div class="wrap">
+      <div class="grid">
+        {families.map((f, k) => {
+          const n = substances.filter((s) => s.family === f.id).length;
+          return (
+            <a href={`/familias/${f.id}`} class="fcard" style={`--c:${f.color}`}>
+              <div class="row"><span class="label">{String(k + 1).padStart(2, '0')}</span><span class="label">{n} sustancias</span></div>
+              <div class="code">{f.code}</div>
+              <h2>{f.name}</h2>
+              <p>{f.tagline}</p>
+            </a>
+          );
+        })}
+      </div>
+    </div>
+  </section>
+
+  <section class="section">
+    <div class="wrap">
+      <div class="section-head">
+        <span class="idx">02 / ESQUEMA</span>
+        <div><h2>Triángulo de efectos</h2></div>
+      </div>
+      <Wheel />
+    </div>
+  </section>
+</Layout>
+
+<style>
+  .head { padding-top: 56px; padding-bottom: 48px; }
+  h1 { font-size: clamp(56px, 11vw, 160px); margin: 12px 0 24px; }
+  .lede { max-width: 64ch; color: var(--mute); }
+  .map { overflow-x: auto; }
+  .map svg { min-width: 720px; width: 100%; }
+  .fn { font-family: 'JetBrains Mono'; font-weight: 700; font-size: 13px; }
+  .fl { font-family: 'Archivo'; font-weight: 800; font-stretch: 112%; font-size: 14px; fill: #e9e9e4; letter-spacing: 1px; }
+  .tl { font-family: 'JetBrains Mono'; font-size: 13px; fill: #e9e9e4; }
+  .lnk:hover rect { fill: #1a1a1a; }
+  .lnk:hover .tl { fill: #d4ff3a; }
+  .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 12px; }
+  .fcard { border: 1px solid var(--line); padding: 20px; min-height: 280px; display: flex; flex-direction: column; background: var(--bg-2); transition: background 0.2s; }
+  .fcard:hover { background: var(--c); color: #000; }
+  .fcard:hover .label, .fcard:hover p, .fcard:hover .code { color: #000; }
+  .row { display: flex; justify-content: space-between; }
+  .code { font-family: var(--display); font-weight: 900; font-stretch: 125%; font-size: 64px; color: var(--c); margin-top: auto; line-height: 1; }
+  .fcard h2 { font-size: 28px; margin: 8px 0; }
+  .fcard p { color: var(--mute); margin: 0; font-size: 12px; }
+</style>

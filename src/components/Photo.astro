@@ -1,0 +1,37 @@
+---
+/** Fotografía real (Wikimedia Commons, licencia libre) con crédito obligatorio. */
+import { photos, photoAt } from '../data/photos';
+
+interface Props { slug: string; name: string }
+const { slug, name } = Astro.props;
+const p = photos[slug];
+const widths = p ? [640, 1280, 2000].filter((w, i) => i === 0 || w <= p.w) : [];
+---
+{p && (
+  <figure class="photo">
+    <a href={p.src} target="_blank" rel="noopener" aria-label={`Abrir la foto de ${name} a tamaño completo`}>
+      <img
+        src={photoAt(p, 1280)}
+        srcset={widths.map((w) => `${photoAt(p, w)} ${Math.min(w, p.w)}w`).join(', ')}
+        sizes="(max-width: 900px) 100vw, 1200px"
+        alt={`Fotografía de ${name}`}
+        width={p.w}
+        height={p.h}
+        loading="lazy"
+        decoding="async"
+      />
+    </a>
+    <figcaption>
+      <span class="label">Foto · {p.author}</span>
+      <span class="label">{p.license}</span>
+      <a class="label" href={p.page} target="_blank" rel="noopener">Wikimedia Commons ↗</a>
+    </figcaption>
+  </figure>
+)}
+
+<style>
+  .photo { margin: 0 0 12px; border: 1px solid var(--line); background: #000; }
+  img { width: 100%; height: auto; max-height: 78vh; object-fit: contain; display: block; }
+  figcaption { display: flex; flex-wrap: wrap; gap: 6px 20px; padding: 10px 12px; border-top: 1px solid var(--line); background: var(--bg-2); }
+  figcaption a:hover { color: var(--acid); }
+</style>

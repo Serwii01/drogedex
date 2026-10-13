@@ -1,0 +1,17 @@
+---
+import Layout from '../layouts/Layout.astro';
+---
+<Layout title="404">
+  <section class="wrap e">
+    <span class="label red">Error / señal perdida</span>
+    <h1>404</h1>
+    <p>Esta sala está cerrada. Vuelve a la pista.</p>
+    <a href="/" class="btn solid">← Inicio</a>
+  </section>
+</Layout>
+
+<style>
+  .e { padding: 120px var(--gutter) 160px; }
+  h1 { font-size: clamp(120px, 30vw, 380px); color: var(--acid); margin: 20px 0; }
+  p { color: var(--mute); margin-bottom: 28px; }
+</style>

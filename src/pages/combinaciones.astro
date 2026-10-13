@@ -1,0 +1,83 @@
+---
+import Layout from '../layouts/Layout.astro';
+import Matrix from '../components/Matrix.astro';
+import BarChart from '../components/BarChart.astro';
+import type { ComboKey } from '../data/types';
+import { comboKeys, risk, riskInfo, notes, type Risk } from '../data/interactions';
+
+const counts: Record<Risk, number> = { S: 0, N: 0, D: 0, C: 0, U: 0, X: 0 };
+comboKeys.forEach((a, i) => comboKeys.slice(i + 1).forEach((b) => counts[risk(a.key, b.key)!]++));
+const dist = (Object.keys(counts) as Risk[]).map((k) => ({ name: riskInfo[k].label, v: counts[k], color: riskInfo[k].color }));
+const crit = Object.entries(notes).map(([k, t]) => {
+  const [a, b] = k.split('+') as [ComboKey, ComboKey];
+  return { a, b, t, r: risk(a, b)! };
+});
+const labelOf = Object.fromEntries(comboKeys.map((k) => [k.key, k.label]));
+---
+<Layout title="Combinaciones" description="Tabla de interacciones entre sustancias: qué se puede y qué no se puede mezclar.">
+  <section class="wrap head">
+    <span class="label">Interacciones / {comboKeys.length} × {comboKeys.length}</span>
+    <h1>Qué no<br /><span class="red">mezclar</span></h1>
+    <p class="lede">
+      Matriz de riesgo de las combinaciones entre las sustancias y fármacos más habituales. Mezclar multiplica los riesgos:
+      la mayoría de muertes por sobredosis implican más de una sustancia. Adaptada de la TripSit Drug Combinations Chart y bibliografía de reducción de daños.
+    </p>
+  </section>
+
+  <section class="section">
+    <div class="wrap"><Matrix /></div>
+  </section>
+
+  <section class="section">
+    <div class="wrap">
+      <div class="section-head">
+        <span class="idx">01 / LAS MÁS PELIGROSAS</span>
+        <div><h2>Combinaciones críticas</h2><p>Interacciones con mayor relevancia clínica, explicadas.</p></div>
+      </div>
+      <div class="crit">
+        {crit.map(({ a, b, r, t }) => {
+          return (
+            <div class="c" style={`--r:${riskInfo[r].color}`}>
+              <span class="label" style="color:var(--r)">{riskInfo[r].label}</span>
+              <h3>{labelOf[a]} <span>+</span> {labelOf[b]}</h3>
+              <p>{t}</p>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  </section>
+
+  <section class="section">
+    <div class="wrap">
+      <div class="section-head">
+        <span class="idx">02 / DISTRIBUCIÓN</span>
+        <div><h2>Reparto del riesgo</h2><p>Número de pares de la matriz en cada categoría.</p></div>
+      </div>
+      <BarChart rows={dist} />
+    </div>
+  </section>
+
+  <section class="section">
+    <div class="wrap glossary">
+      <div><h3>IMAO</h3><p>Inhibidores de la monoaminooxidasa: antidepresivos (fenelzina, moclobemida) y β-carbolinas de la ayahuasca o la ruda siria.</p></div>
+      <div><h3>ISRS</h3><p>Inhibidores selectivos de la recaptación de serotonina: fluoxetina, sertralina, escitalopram… Los antidepresivos más recetados.</p></div>
+      <div><h3>Litio</h3><p>Estabilizador del ánimo usado en el trastorno bipolar. Interacción grave documentada con psicodélicos.</p></div>
+      <div><h3>Opioides</h3><p>Incluye heroína, morfina, fentanilo, oxicodona, codeína, metadona y kratom. El tramadol se trata aparte por su acción serotoninérgica.</p></div>
+    </div>
+  </section>
+</Layout>
+
+<style>
+  .head { padding-top: 56px; padding-bottom: 32px; }
+  h1 { font-size: clamp(56px, 11vw, 160px); margin: 12px 0 24px; }
+  .lede { max-width: 72ch; color: var(--mute); }
+  .crit { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 12px; }
+  .c { border: 1px solid var(--line); border-top: 3px solid var(--r); padding: 18px; background: var(--bg-2); }
+  .c h3 { font-size: 20px; margin: 10px 0; }
+  .c h3 span { color: var(--dim); }
+  .c p { color: var(--mute); margin: 0; font-size: 13px; }
+  .glossary { display: grid; grid-template-columns: repeat(4, 1fr); gap: 32px; }
+  .glossary p { color: var(--mute); font-size: 13px; }
+  @media (max-width: 860px) { .glossary { grid-template-columns: 1fr 1fr; } }
+</style>

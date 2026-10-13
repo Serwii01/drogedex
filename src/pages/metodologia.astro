@@ -1,0 +1,89 @@
+---
+import Layout from '../layouts/Layout.astro';
+import { substances } from '../data';
+
+const est = substances.filter((s) => s.harm.src === 'est').length;
+const refs = [
+  'Nutt, D., King, L. A., Saulsbury, W., & Blakemore, C. (2007). Development of a rational scale to assess the harm of drugs of potential misuse. The Lancet, 369(9566), 1047–1053.',
+  'Nutt, D. J., King, L. A., & Phillips, L. D. (2010). Drug harms in the UK: a multicriteria decision analysis. The Lancet, 376(9752), 1558–1565.',
+  'Gable, R. S. (2004). Comparison of acute lethal toxicity of commonly abused psychoactive substances. Addiction, 99(6), 686–696.',
+  'Gable, R. S. (2006). The toxicity of recreational drugs. American Scientist, 94(3), 206–208.',
+  'UNODC (2024). World Drug Report 2024. United Nations Office on Drugs and Crime.',
+  'Agencia de la Unión Europea sobre Drogas – EUDA (2024). European Drug Report 2024: Trends and Developments.',
+  'Delegación del Gobierno para el Plan Nacional sobre Drogas (2023). Encuesta sobre alcohol y otras drogas en España (EDADES) 2022. Ministerio de Sanidad.',
+  'Centers for Disease Control and Prevention / NCHS (2023). Drug overdose deaths in the United States, 2002–2022. NCHS Data Brief nº 491.',
+  'Junta Internacional de Fiscalización de Estupefacientes – JIFE (2023). Informe sobre sustancias sicotrópicas.',
+  'TripSit (2023). Drug Combinations Chart, v3. tripsit.me',
+  'Organización Mundial de la Salud (2024). Global status report on alcohol and health and treatment of substance use disorders.',
+  'Stahl, S. M. (2021). Stahl’s Essential Psychopharmacology (5.ª ed.). Cambridge University Press.',
+];
+---
+<Layout title="Metodología" description="Fuentes, criterios y limitaciones de Drogedex.">
+  <section class="wrap head">
+    <span class="label">Método / fuentes</span>
+    <h1>Metodo<br />logía</h1>
+  </section>
+
+  <section class="section">
+    <div class="wrap cols">
+      <div>
+        <span class="idx">01 / PROPÓSITO</span>
+        <p class="big">Drogedex es un recurso divulgativo desarrollado como Trabajo de Fin de Grado en Psicología. Su objetivo es reunir, en un formato visual y accesible, información sobre sustancias psicoactivas desde el enfoque de salud pública de reducción de riesgos y daños.</p>
+      </div>
+      <div>
+        <span class="idx">02 / CRITERIOS</span>
+        <ul class="dash">
+          <li><b>Familias</b>: clasificación farmacológica por efecto predominante y diana molecular.</li>
+          <li><b>Perfil de daño</b>: escala 0–3 de Nutt et al. (2007). {substances.length - est} sustancias tienen valor publicado; {est} son estimaciones editoriales con la misma escala, señaladas en cada ficha.</li>
+          <li><b>Combinaciones</b>: adaptadas de la TripSit Drug Combinations Chart, agrupando sustancias por clase.</li>
+          <li><b>Precios</b>: estimaciones orientativas en euros (EUDA, UNODC, Global Drug Survey y prensa especializada, 2022–2025). No son datos oficiales comparables.</li>
+          <li><b>Duraciones</b>: rangos típicos de la literatura de reducción de riesgos; varían con dosis, vía y tolerancia.</li>
+          <li><b>Imágenes</b>: fotografías de Wikimedia Commons con licencia libre (autor y licencia junto a cada foto), estructuras 2D de PubChem (NIH, dominio público) y pósters generativos vectoriales propios.</li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <section class="section">
+    <div class="wrap cols">
+      <div>
+        <span class="idx">03 / LIMITACIONES</span>
+        <ul class="dash">
+          <li>No incluye dosis: no es una guía de consumo.</li>
+          <li>Los datos de mercado ilícito son inherentemente imprecisos.</li>
+          <li>Las combinaciones se agrupan por clases; dentro de cada clase hay diferencias.</li>
+          <li>La información puede quedar desactualizada; la legislación cambia con frecuencia.</li>
+        </ul>
+      </div>
+      <div>
+        <span class="idx">04 / RECURSOS</span>
+        <ul class="dash">
+          <li>Emergencias: <b>112</b></li>
+          <li>Análisis de sustancias y reducción de riesgos: <a class="acid" href="https://energycontrol-international.org" target="_blank" rel="noopener">Energy Control</a></li>
+          <li>Plan Nacional sobre Drogas: <a class="acid" href="https://pnsd.sanidad.gob.es" target="_blank" rel="noopener">pnsd.sanidad.gob.es</a></li>
+          <li>Agencia de la UE sobre Drogas: <a class="acid" href="https://www.euda.europa.eu" target="_blank" rel="noopener">euda.europa.eu</a></li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <section class="section">
+    <div class="wrap">
+      <div class="section-head"><span class="idx">05 / BIBLIOGRAFÍA</span><div><h2>Referencias</h2></div></div>
+      <ol class="refs">{refs.map((r) => <li>{r}</li>)}</ol>
+    </div>
+  </section>
+</Layout>
+
+<style>
+  .head { padding-top: 56px; padding-bottom: 48px; }
+  h1 { font-size: clamp(56px, 11vw, 160px); margin: 12px 0 0; }
+  .idx { display: block; font-size: 11px; color: var(--acid); letter-spacing: 0.14em; margin-bottom: 18px; }
+  .cols { display: grid; grid-template-columns: 1fr 1fr; gap: 56px; }
+  @media (max-width: 860px) { .cols { grid-template-columns: 1fr; } }
+  .big { font-family: var(--display); font-weight: 500; font-size: clamp(18px, 2vw, 24px); line-height: 1.4; margin: 0; }
+  b { font-weight: 500; color: var(--fg); }
+  .refs { padding-left: 24px; margin: 0; max-width: 100ch; }
+  .refs li { padding: 10px 0 10px 8px; border-bottom: 1px solid var(--line); color: var(--mute); }
+  .refs li::marker { color: var(--acid); font-size: 11px; }
+</style>

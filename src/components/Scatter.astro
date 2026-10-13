@@ -1,0 +1,87 @@
+---
+interface Pt { name: string; x: number; y: number; color: string; href?: string }
+interface Props {
+  pts: Pt[];
+  xLabel: string;
+  yLabel: string;
+  xMax: number;
+  yMax: number;
+  xLog?: boolean;
+  xMin?: number;
+  xTicks: number[];
+  yTicks: number[];
+  quadrants?: [string, string, string, string];
+}
+const { pts, xLabel, yLabel, xMax, yMax, xLog = false, xMin = 0, xTicks, yTicks, quadrants } = Astro.props;
+const W = 900, H = 560, L = 70, R = 30, T = 30, B = 60;
+const px = (v: number) => xLog
+  ? L + ((Math.log10(v) - Math.log10(xMin)) / (Math.log10(xMax) - Math.log10(xMin))) * (W - L - R)
+  : L + ((v - xMin) / (xMax - xMin)) * (W - L - R);
+const py = (v: number) => H - B - (v / yMax) * (H - T - B);
+
+// coloca etiquetas evitando solapamientos (desplazamiento vertical voraz)
+const placed: { x: number; y: number; right: boolean; w: number }[] = [];
+const laid = pts
+  .map((p) => ({ ...p, cx: px(p.x), cy: py(p.y) }))
+  .sort((a, b) => a.cy - b.cy)
+  .map((p) => {
+    const right = p.cx > W - 180;
+    const w = p.name.length * 6.8 + 12;
+    let ly = p.cy + 4;
+    const hits = (y: number) =>
+      placed.some((q) => q.right === right && Math.abs(q.y - y) < 13 && Math.abs(q.x - p.cx) < Math.max(q.w, w));
+    for (let k = 0; k < 12 && hits(ly); k++) ly += 13;
+    placed.push({ x: p.cx, y: ly, right, w });
+    return { ...p, ly, right };
+  });
+---
+<figure class="sc">
+  <svg viewBox={`0 0 ${W} ${H}`} role="img" aria-label={`${yLabel} frente a ${xLabel}`}>
+    {quadrants && (
+      <g class="q">
+        <text x={L + 12} y={T + 20}>{quadrants[0]}</text>
+        <text x={W - R - 12} y={T + 20} text-anchor="end">{quadrants[1]}</text>
+        <text x={L + 12} y={H - B - 12}>{quadrants[2]}</text>
+        <text x={W - R - 12} y={H - B - 12} text-anchor="end">{quadrants[3]}</text>
+      </g>
+    )}
+    {xTicks.map((t) => (
+      <g>
+        <line x1={px(t)} x2={px(t)} y1={T} y2={H - B} stroke="#242424" />
+        <text x={px(t)} y={H - B + 20} text-anchor="middle" class="tk">{t}</text>
+      </g>
+    ))}
+    {yTicks.map((t) => (
+      <g>
+        <line x1={L} x2={W - R} y1={py(t)} y2={py(t)} stroke="#242424" />
+        <text x={L - 10} y={py(t) + 4} text-anchor="end" class="tk">{t}</text>
+      </g>
+    ))}
+    <line x1={L} x2={W - R} y1={H - B} y2={H - B} stroke="#8b8b86" />
+    <line x1={L} x2={L} y1={T} y2={H - B} stroke="#8b8b86" />
+    <text x={(L + W - R) / 2} y={H - 14} text-anchor="middle" class="ax">{xLabel}</text>
+    <text x={18} y={(T + H - B) / 2} text-anchor="middle" class="ax" transform={`rotate(-90 18 ${(T + H - B) / 2})`}>{yLabel}</text>
+    {laid.map((p) => {
+      const x = p.cx, y = p.cy, right = p.right;
+      const dot = (
+        <g class="pt">
+          {Math.abs(p.ly - 4 - y) > 2 && <line x1={x} y1={y} x2={right ? x - 10 : x + 10} y2={p.ly - 4} stroke={p.color} stroke-opacity="0.5" />}
+          <circle cx={x} cy={y} r="7" fill={p.color} fill-opacity="0.25" stroke={p.color} stroke-width="2" />
+          <text x={right ? x - 12 : x + 12} y={p.ly} text-anchor={right ? 'end' : 'start'} class="lb">{p.name}</text>
+        </g>
+      );
+      return p.href ? <a href={p.href}>{dot}</a> : dot;
+    })}
+  </svg>
+</figure>
+
+<style>
+  .sc { margin: 0; overflow-x: auto; }
+  svg { width: 100%; min-width: 600px; height: auto; }
+  .tk { font-family: 'JetBrains Mono'; font-size: 11px; fill: #8b8b86; }
+  .ax { font-family: 'JetBrains Mono'; font-size: 11px; fill: #e9e9e4; letter-spacing: 1.5px; text-transform: uppercase; }
+  .lb { font-family: 'JetBrains Mono'; font-size: 11px; fill: #e9e9e4; paint-order: stroke; stroke: #090909; stroke-width: 4px; stroke-linejoin: round; }
+  .q text { font-family: 'Archivo'; font-weight: 900; font-stretch: 125%; font-size: 13px; fill: #3a3a3a; letter-spacing: 1px; }
+  .pt:hover .lb { fill: #d4ff3a; }
+  .pt:hover circle { fill-opacity: 0.8; }
+</style>

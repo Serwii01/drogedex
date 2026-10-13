@@ -1,0 +1,107 @@
+---
+/**
+ * Póster generativo vectorial (resolución infinita) único para cada sustancia.
+ * La forma depende del slug; el color, de la familia.
+ */
+import { seed, rng } from '../lib/rand';
+
+interface Props {
+  slug: string;
+  color: string;
+  symbol: string;
+  n: number;
+  detail?: boolean;
+  class?: string;
+}
+const { slug, color, symbol, n, detail = false, class: cls } = Astro.props;
+const r = rng(seed(slug));
+const C = 500;
+
+const rings = Array.from({ length: detail ? 14 : 9 }, (_, i) => {
+  const radius = 70 + i * (detail ? 28 : 40) + r() * 14;
+  const dash = r() < 0.35 ? 'none' : `${Math.round(2 + r() * 40)} ${Math.round(4 + r() * 30)}`;
+  return { radius, dash, w: r() < 0.2 ? 3 : 1, rot: Math.round(r() * 360), accent: r() < 0.22 };
+});
+
+const spokes = Math.round(12 + r() * 60);
+const spokeLen = 0.15 + r() * 0.35;
+const arms = Array.from({ length: Math.round(2 + r() * 4) }, () => ({
+  a: r() * Math.PI * 2,
+  len: 180 + r() * 260,
+}));
+const nodes = Array.from({ length: Math.round(5 + r() * 9) }, () => {
+  const a = r() * Math.PI * 2;
+  const d = 120 + r() * 330;
+  return { x: C + Math.cos(a) * d, y: C + Math.sin(a) * d, s: 3 + r() * 9, fill: r() < 0.4 };
+});
+const poly = Math.round(3 + r() * 5);
+const polyR = 110 + r() * 90;
+const polyPts = Array.from({ length: poly }, (_, i) => {
+  const a = (i / poly) * Math.PI * 2 - Math.PI / 2;
+  return `${(C + Math.cos(a) * polyR).toFixed(1)},${(C + Math.sin(a) * polyR).toFixed(1)}`;
+}).join(' ');
+const uid = `g-${slug}`;
+---
+<svg viewBox="0 0 1000 1000" class={cls} role="img" aria-label={`Póster generativo de ${slug}`} xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="xMidYMid slice">
+  <defs>
+    <radialGradient id={uid} cx="50%" cy="50%" r="55%">
+      <stop offset="0%" stop-color={color} stop-opacity="0.28" />
+      <stop offset="60%" stop-color={color} stop-opacity="0.04" />
+      <stop offset="100%" stop-color="#000" stop-opacity="0" />
+    </radialGradient>
+    <pattern id={`${uid}-dots`} width="25" height="25" patternUnits="userSpaceOnUse">
+      <circle cx="1" cy="1" r="1" fill="#fff" fill-opacity="0.12" />
+    </pattern>
+  </defs>
+  <rect width="1000" height="1000" fill="#0b0b0b" />
+  <rect width="1000" height="1000" fill={`url(#${uid}-dots)`} />
+  <rect width="1000" height="1000" fill={`url(#${uid})`} />
+
+  {Array.from({ length: spokes }, (_, i) => {
+    const a = (i / spokes) * Math.PI * 2;
+    const r1 = 480 * (1 - spokeLen);
+    return (
+      <line
+        x1={C + Math.cos(a) * r1} y1={C + Math.sin(a) * r1}
+        x2={C + Math.cos(a) * 480} y2={C + Math.sin(a) * 480}
+        stroke="#fff" stroke-opacity="0.16" stroke-width="1"
+      />
+    );
+  })}
+
+  {rings.map((g) => (
+    <circle
+      cx={C} cy={C} r={g.radius} fill="none"
+      stroke={g.accent ? color : '#e9e9e4'}
+      stroke-opacity={g.accent ? 0.95 : 0.35}
+      stroke-width={g.w}
+      stroke-dasharray={g.dash}
+      transform={`rotate(${g.rot} ${C} ${C})`}
+    />
+  ))}
+
+  {arms.map((a) => (
+    <g>
+      <line x1={C} y1={C} x2={C + Math.cos(a.a) * a.len} y2={C + Math.sin(a.a) * a.len} stroke={color} stroke-width="2" />
+      <circle cx={C + Math.cos(a.a) * a.len} cy={C + Math.sin(a.a) * a.len} r="7" fill="#0b0b0b" stroke={color} stroke-width="2" />
+    </g>
+  ))}
+
+  <polygon points={polyPts} fill="none" stroke="#e9e9e4" stroke-width="2" />
+  <circle cx={C} cy={C} r="18" fill={color} />
+
+  {nodes.map((p) => (
+    p.fill
+      ? <rect x={p.x - p.s} y={p.y - p.s} width={p.s * 2} height={p.s * 2} fill={color} />
+      : <rect x={p.x - p.s} y={p.y - p.s} width={p.s * 2} height={p.s * 2} fill="none" stroke="#e9e9e4" stroke-opacity="0.6" />
+  ))}
+
+  {detail && (
+    <g font-family="JetBrains Mono, monospace" fill="#e9e9e4" fill-opacity="0.6" font-size="16" letter-spacing="3">
+      <text x="40" y="60">DRGX/{String(n).padStart(3, '0')}</text>
+      <text x="960" y="60" text-anchor="end">{symbol.toUpperCase()}</text>
+      <text x="40" y="960">SEED {seed(slug).toString(16).toUpperCase()}</text>
+      <text x="960" y="960" text-anchor="end">{rings.length}R · {spokes}S · {poly}P</text>
+    </g>
+  )}
+</svg>

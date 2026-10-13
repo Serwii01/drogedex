@@ -1,0 +1,105 @@
+---
+import Layout from '../../layouts/Layout.astro';
+import Card from '../../components/Card.astro';
+import { substances } from '../../data';
+import { families } from '../../data/families';
+---
+<Layout title="Índice de sustancias" description="Índice completo de sustancias psicoactivas de Drogedex, filtrable por familia.">
+  <section class="wrap head">
+    <span class="label">Índice / {substances.length} entradas</span>
+    <h1>Sustancias</h1>
+
+    <div class="controls">
+      <label class="search">
+        <span class="label">Buscar</span>
+        <input id="q" type="search" placeholder="nombre, apodo, familia…" autocomplete="off" />
+      </label>
+      <div class="filters" role="group" aria-label="Filtrar por familia">
+        <button class="f on" data-f="all" type="button">Todas</button>
+        {families.map((f) => (
+          <button class="f" data-f={f.id} style={`--c:${f.color}`} type="button">{f.name}</button>
+        ))}
+      </div>
+    </div>
+    <p class="label count" id="count">{substances.length} resultados</p>
+  </section>
+
+  <section class="wrap">
+    <div class="grid" id="grid">
+      {substances.map((s) => <Card s={s} />)}
+    </div>
+    <p class="empty label" id="empty" hidden>Sin resultados. Prueba con otro término.</p>
+  </section>
+</Layout>
+
+<script>
+  const q = document.getElementById('q') as HTMLInputElement;
+  const cards = [...document.querySelectorAll<HTMLElement>('#grid .card')];
+  const btns = [...document.querySelectorAll<HTMLButtonElement>('.f')];
+  const count = document.getElementById('count')!;
+  const empty = document.getElementById('empty')!;
+  let fam = 'all';
+
+  const norm = (s: string) => s.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase();
+
+  function apply() {
+    const term = norm(q.value.trim());
+    let n = 0;
+    for (const c of cards) {
+      const ok = (fam === 'all' || c.dataset.family === fam) && (!term || norm(c.dataset.search || '').includes(term));
+      c.style.display = ok ? '' : 'none';
+      if (ok) n++;
+    }
+    count.textContent = `${n} resultado${n === 1 ? '' : 's'}`;
+    empty.hidden = n > 0;
+  }
+
+  btns.forEach((b) =>
+    b.addEventListener('click', () => {
+      fam = b.dataset.f!;
+      btns.forEach((x) => x.classList.toggle('on', x === b));
+      apply();
+    }),
+  );
+  q.addEventListener('input', apply);
+
+  const hash = location.hash.slice(1);
+  if (hash) btns.find((b) => b.dataset.f === hash)?.click();
+</script>
+
+<style>
+  .head { padding-top: 56px; padding-bottom: 32px; }
+  h1 { font-size: clamp(56px, 11vw, 160px); margin: 12px 0 32px; }
+  .controls { display: grid; grid-template-columns: 320px 1fr; gap: 24px; align-items: end; }
+  .search { display: flex; flex-direction: column; gap: 6px; }
+  input {
+    background: transparent;
+    border: 0;
+    border-bottom: 1px solid var(--fg);
+    color: var(--fg);
+    font: inherit;
+    font-size: 16px;
+    padding: 8px 0;
+    outline: none;
+  }
+  input:focus { border-color: var(--acid); }
+  .filters { display: flex; flex-wrap: wrap; gap: 6px; }
+  .f {
+    --c: var(--acid);
+    background: transparent;
+    border: 1px solid var(--line-2);
+    color: var(--mute);
+    font-family: var(--mono);
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    padding: 7px 10px;
+    cursor: pointer;
+  }
+  .f:hover { color: var(--c); border-color: var(--c); }
+  .f.on { background: var(--c); border-color: var(--c); color: #000; }
+  .count { margin-top: 18px; }
+  .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 12px; padding-bottom: 80px; }
+  .empty { padding: 40px 0 120px; }
+  @media (max-width: 760px) { .controls { grid-template-columns: 1fr; } .grid { grid-template-columns: repeat(2, 1fr); gap: 8px; } }
+</style>

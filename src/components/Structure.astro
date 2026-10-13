@@ -1,0 +1,25 @@
+---
+/** Estructura química 2D servida por PubChem (NIH, dominio público) a 1000×1000 px. */
+interface Props { name: string; query: string }
+const { name, query } = Astro.props;
+const src = `https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/name/${encodeURIComponent(query)}/PNG?image_size=1000x1000`;
+const link = `https://pubchem.ncbi.nlm.nih.gov/#query=${encodeURIComponent(query)}`;
+---
+<figure class="struct">
+  <img src={src} alt={`Estructura química 2D de ${name}`} width="1000" height="1000" loading="lazy" decoding="async" onerror="this.closest('figure').classList.add('fail')" />
+  <figcaption>
+    <span class="label">Estructura 2D · {query}</span>
+    <a class="label" href={link} target="_blank" rel="noopener">PubChem ↗</a>
+  </figcaption>
+  <p class="fallback label">Estructura no disponible</p>
+</figure>
+
+<style>
+  .struct { margin: 0; position: relative; background: #0b0b0b; border: 1px solid var(--line); }
+  img { width: 100%; height: auto; aspect-ratio: 1; filter: invert(1) contrast(1.4); mix-blend-mode: screen; }
+  figcaption { display: flex; justify-content: space-between; padding: 10px 12px; border-top: 1px solid var(--line); }
+  figcaption a:hover { color: var(--acid); }
+  .fallback { display: none; position: absolute; inset: 0; place-items: center; }
+  .struct:global(.fail) img { visibility: hidden; }
+  .struct:global(.fail) .fallback { display: grid; }
+</style>

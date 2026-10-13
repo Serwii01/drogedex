@@ -1,0 +1,53 @@
+---
+import Sigil from './Sigil.astro';
+import { familyById } from '../data/families';
+import { pad } from '../data';
+import type { Substance } from '../data/types';
+
+interface Props { s: Substance & { n: number } }
+const { s } = Astro.props;
+const f = familyById[s.family];
+---
+<a
+  href={`/sustancias/${s.slug}`}
+  class="card"
+  style={`--c:${f.color}`}
+  data-family={s.family}
+  data-search={[s.name, s.symbol, ...s.aka, f.name].join(' ').toLowerCase()}
+>
+  <div class="art"><Sigil slug={s.slug} color={f.color} symbol={s.symbol} n={s.n} /></div>
+  <div class="meta">
+    <span class="num">#{pad(s.n)}</span>
+    <span class="sym">{s.symbol}</span>
+  </div>
+  <div class="name">{s.name}</div>
+  <div class="fam"><span class="sw"></span>{f.name}</div>
+</a>
+
+<style>
+  .card {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    border: 1px solid var(--line);
+    background: var(--bg-2);
+    transition: border-color 0.2s, transform 0.2s;
+  }
+  .card:hover { border-color: var(--c); color: var(--fg); transform: translateY(-2px); }
+  .art { aspect-ratio: 1; overflow: hidden; border-bottom: 1px solid var(--line); }
+  .art :global(svg) { width: 100%; height: 100%; transition: transform 0.6s; }
+  .card:hover .art :global(svg) { transform: scale(1.06) rotate(4deg); }
+  .meta { display: flex; justify-content: space-between; padding: 10px 12px 0; font-size: 11px; color: var(--mute); letter-spacing: 0.1em; }
+  .sym { color: var(--c); font-weight: 700; }
+  .name {
+    padding: 4px 12px 2px;
+    font-family: var(--display);
+    font-weight: 800;
+    font-stretch: 112%;
+    text-transform: uppercase;
+    font-size: 17px;
+    line-height: 1.05;
+  }
+  .fam { padding: 2px 12px 12px; font-size: 11px; color: var(--mute); display: flex; align-items: center; gap: 6px; }
+  .sw { width: 8px; height: 8px; background: var(--c); }
+</style>

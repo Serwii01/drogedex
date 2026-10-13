@@ -1,0 +1,114 @@
+---
+/** Esquema de sinapsis química con la diana farmacológica resaltada. */
+import type { Target } from '../data/families';
+
+interface Props { target: Target; color: string; label: string }
+const { target, color, label } = Astro.props;
+
+// ubicación de cada diana en el esquema
+const where: Record<Target, { zone: 'pre-t' | 'post-r' | 'pre-r' | 'vessel'; nt: string }> = {
+  mu: { zone: 'post-r', nt: 'Endorfinas' },
+  dat: { zone: 'pre-t', nt: 'Dopamina' },
+  sert: { zone: 'pre-t', nt: 'Serotonina' },
+  '5ht2a': { zone: 'post-r', nt: 'Serotonina' },
+  nmda: { zone: 'post-r', nt: 'Glutamato' },
+  gabaa: { zone: 'post-r', nt: 'GABA' },
+  cb1: { zone: 'pre-r', nt: 'Endocannabinoides' },
+  machr: { zone: 'post-r', nt: 'Acetilcolina' },
+  adenosina: { zone: 'post-r', nt: 'Adenosina' },
+  nachr: { zone: 'post-r', nt: 'Acetilcolina' },
+  vaso: { zone: 'vessel', nt: 'Óxido nítrico' },
+};
+const w = where[target];
+const vesicles = [[300, 120], [360, 95], [420, 125], [480, 100], [540, 130], [330, 170], [460, 160]];
+const molecules = [[330, 262], [380, 278], [440, 258], [500, 282], [550, 266], [410, 290], [470, 272]];
+---
+<figure class="syn">
+  <svg viewBox="0 0 900 470" role="img" aria-label={`Esquema de sinapsis: diana ${label}`}>
+    <defs>
+      <pattern id="hatch" width="8" height="8" patternUnits="userSpaceOnUse" patternTransform="rotate(45)">
+        <line x1="0" y1="0" x2="0" y2="8" stroke="#2a2a2a" stroke-width="2" />
+      </pattern>
+    </defs>
+
+    <!-- presináptica -->
+    <path d="M180 20 L720 20 L720 150 Q720 220 640 228 L260 228 Q180 220 180 150 Z" fill="url(#hatch)" stroke="#e9e9e4" stroke-width="1.5" />
+    <text x="196" y="44" class="t">NEURONA PRESINÁPTICA</text>
+    {vesicles.map(([x, y]) => (
+      <g>
+        <circle cx={x} cy={y} r="22" fill="#0b0b0b" stroke="#8b8b86" />
+        {[[-7, -5], [6, -6], [0, 7]].map(([dx, dy]) => <circle cx={x + dx} cy={y + dy} r="3.5" fill="#e9e9e4" />)}
+      </g>
+    ))}
+
+    <!-- transportador de recaptación -->
+    <g class:list={[{ hot: w.zone === 'pre-t' }]}>
+      <rect x="610" y="205" width="34" height="46" rx="4" class="rc" />
+      <path d="M627 250 L627 190" class="arr" marker-end="url(#ah)" />
+      <text x="660" y="196" class="t sm">TRANSPORTADOR</text>
+    </g>
+
+    <!-- receptor presináptico -->
+    <g class:list={[{ hot: w.zone === 'pre-r' }]}>
+      <rect x="226" y="205" width="30" height="40" rx="4" class="rc" />
+      <text x="100" y="196" class="t sm">AUTORRECEPTOR /</text>
+      <text x="100" y="210" class="t sm">CB1</text>
+    </g>
+
+    <!-- hendidura -->
+    <text x="732" y="276" class="t sm">HENDIDURA</text>
+    {molecules.map(([x, y]) => <circle cx={x} cy={y} r="4" fill="#e9e9e4" />)}
+    <text x="200" y="278" class="t sm mute">{w.nt.toUpperCase()}</text>
+
+    <!-- postsináptica -->
+    <path d="M180 450 L720 450 L720 340 Q720 312 690 312 L210 312 Q180 312 180 340 Z" fill="url(#hatch)" stroke="#e9e9e4" stroke-width="1.5" />
+    <text x="196" y="438" class="t">NEURONA POSTSINÁPTICA</text>
+    {[260, 340, 420, 500, 580].map((x, i) => (
+      <g class:list={[{ hot: w.zone === 'post-r' && i === 2 }]}>
+        <path d={`M${x} 312 L${x} 296 Q${x} 290 ${x + 8} 290 L${x + 24} 290 Q${x + 32} 290 ${x + 32} 296 L${x + 32} 312`} class="rc" />
+        <rect x={x + 6} y="312" width="20" height="26" class="rc" />
+      </g>
+    ))}
+
+    <!-- vaso sanguíneo -->
+    {w.zone === 'vessel' && (
+      <g class="hot">
+        <rect x="760" y="30" width="110" height="410" rx="55" class="rc" fill-opacity="0.15" />
+        <text x="815" y="240" text-anchor="middle" class="t sm">VASO</text>
+      </g>
+    )}
+
+    <!-- etiqueta de la diana -->
+    <g>
+      {w.zone === 'pre-t' && <line x1="627" y1="228" x2="800" y2="140" class="lead" />}
+      {w.zone === 'pre-r' && <line x1="241" y1="225" x2="70" y2="300" class="lead" />}
+      {w.zone === 'post-r' && <line x1="436" y1="290" x2="800" y2="380" class="lead" />}
+    </g>
+
+    <defs>
+      <marker id="ah" viewBox="0 0 10 10" refX="5" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+        <path d="M0 0 L10 5 L0 10 z" fill="#8b8b86" />
+      </marker>
+    </defs>
+  </svg>
+  <figcaption>
+    <span class="label">Diana principal</span>
+    <strong style={`color:${color}`}>{label}</strong>
+  </figcaption>
+</figure>
+
+<style define:vars={{ c: color }}>
+  .syn { margin: 0; }
+  svg { width: 100%; height: auto; }
+  .t { font-family: 'JetBrains Mono', monospace; font-size: 12px; fill: #e9e9e4; letter-spacing: 1.5px; }
+  .sm { font-size: 10px; fill: #8b8b86; }
+  .mute { fill: #5a5a57; }
+  .rc { fill: #161616; stroke: #8b8b86; stroke-width: 1.5; }
+  .arr { stroke: #8b8b86; stroke-width: 1.5; fill: none; }
+  .hot .rc { fill: var(--c); stroke: var(--c); filter: drop-shadow(0 0 10px var(--c)); animation: pulse 1.8s ease-in-out infinite; }
+  .hot .t { fill: var(--c); }
+  .lead { stroke: var(--c); stroke-width: 1; stroke-dasharray: 3 3; }
+  @keyframes pulse { 50% { opacity: 0.55; } }
+  figcaption { display: flex; gap: 14px; align-items: baseline; flex-wrap: wrap; border-top: 1px solid var(--line); padding-top: 12px; margin-top: 8px; }
+  strong { font-family: var(--display); font-stretch: 112%; text-transform: uppercase; font-size: 18px; }
+</style>

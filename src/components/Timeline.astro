@@ -1,0 +1,84 @@
+---
+/**
+ * Curva temporal de efectos. Con varias filas usa escala logarítmica
+ * para poder comparar sustancias de segundos con sustancias de días.
+ */
+import type { Duration } from '../data/types';
+
+interface Row { name: string; d: Duration; color: string; href?: string }
+interface Props { rows: Row[]; log?: boolean }
+const { rows, log = false } = Astro.props;
+
+const MIN = 1 / 60; // 1 minuto
+const maxH = log ? 36 : Math.max(...rows.map((r) => r.d.total));
+const pos = (h: number) => {
+  if (!log) return (h / maxH) * 100;
+  const v = Math.max(h, MIN);
+  return ((Math.log10(v) - Math.log10(MIN)) / (Math.log10(maxH) - Math.log10(MIN))) * 100;
+};
+const fmtH = (h: number) => (h < 1 / 60 ? `${Math.round(h * 3600)} s` : h < 1 ? `${Math.round(h * 60)} min` : `${+h.toFixed(1)} h`);
+
+const ticks = log
+  ? [{ h: 1 / 60, l: '1 min' }, { h: 5 / 60, l: '5 min' }, { h: 0.25, l: '15 min' }, { h: 1, l: '1 h' }, { h: 3, l: '3 h' }, { h: 8, l: '8 h' }, { h: 24, l: '24 h' }]
+  : Array.from({ length: 6 }, (_, i) => { const h = (maxH / 5) * i; return { h, l: fmtH(h) }; });
+---
+<div class:list={['tl', { multi: rows.length > 1 }]}>
+  <div class="axis">
+    {ticks.map((t) => <span style={`left:${pos(t.h)}%`}>{t.l}</span>)}
+  </div>
+  {rows.map((r) => {
+    const a = pos(r.d.onset), b = pos(r.d.peak[0]), c = pos(r.d.peak[1]), e = pos(r.d.total);
+    const Tag = r.href ? 'a' : 'div';
+    return (
+      <Tag href={r.href} class="line" style={`--c:${r.color}`}>
+        {rows.length > 1 && <span class="nm">{r.name}</span>}
+        <span class="lane">
+          {ticks.map((t) => <i class="grid" style={`left:${pos(t.h)}%`} />)}
+          <span class="seg up" style={`left:${a}%; width:${Math.max(b - a, 0.4)}%`}></span>
+          <span class="seg pk" style={`left:${b}%; width:${Math.max(c - b, 0.6)}%`}></span>
+          <span class="seg dn" style={`left:${c}%; width:${Math.max(e - c, 0.4)}%`}></span>
+          <span class="mk" style={`left:${a}%`}></span>
+          <span class="mk" style={`left:${e}%`}></span>
+        </span>
+      </Tag>
+    );
+  })}
+  {rows.length === 1 && (
+    <dl class="legend">
+      <div><dt class="label">Inicio</dt><dd>{fmtH(rows[0].d.onset)}</dd></div>
+      <div><dt class="label">Pico</dt><dd>{fmtH(rows[0].d.peak[0])} – {fmtH(rows[0].d.peak[1])}</dd></div>
+      <div><dt class="label">Duración total</dt><dd>{fmtH(rows[0].d.total)}</dd></div>
+      <div><dt class="label">Vía</dt><dd>{rows[0].d.route}</dd></div>
+    </dl>
+  )}
+</div>
+
+<style>
+  .tl { position: relative; }
+  .axis { position: relative; height: 22px; margin-left: 0; font-size: 10px; color: var(--mute); }
+  .multi .axis { margin-left: 150px; }
+  .axis span { position: absolute; transform: translateX(-50%); white-space: nowrap; }
+  .axis span:first-child { transform: none; }
+  .line { display: grid; grid-template-columns: 1fr; align-items: center; padding: 4px 0; }
+  .multi .line { grid-template-columns: 150px 1fr; border-bottom: 1px solid var(--line); }
+  .nm { font-size: 11px; text-transform: uppercase; letter-spacing: 0.06em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; padding-right: 10px; }
+  a.line:hover .nm { color: var(--acid); }
+  .lane { position: relative; height: 56px; }
+  .multi .lane { height: 18px; }
+  .grid { position: absolute; top: 0; bottom: 0; width: 1px; background: var(--line); }
+  .seg { position: absolute; top: 25%; bottom: 25%; }
+  .multi .seg { top: 20%; bottom: 20%; }
+  .up { background: linear-gradient(90deg, transparent, var(--c)); }
+  .pk { background: var(--c); box-shadow: 0 0 16px color-mix(in srgb, var(--c) 50%, transparent); }
+  .dn { background: linear-gradient(90deg, var(--c), transparent); }
+  .mk { position: absolute; top: 0; bottom: 0; width: 1px; background: var(--fg); opacity: 0.6; }
+  .multi .mk { display: none; }
+  .legend { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin: 16px 0 0; }
+  .legend dd { margin: 4px 0 0; font-size: 13px; }
+  @media (max-width: 640px) {
+    .legend { grid-template-columns: 1fr 1fr; }
+    .multi .axis { margin-left: 96px; }
+    .multi .line { grid-template-columns: 96px 1fr; }
+    .axis span:nth-child(even) { display: none; }
+  }
+</style>

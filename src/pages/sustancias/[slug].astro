@@ -1,0 +1,323 @@
+---
+import Layout from '../../layouts/Layout.astro';
+import Sigil from '../../components/Sigil.astro';
+import Structure from '../../components/Structure.astro';
+import Synapse from '../../components/Synapse.astro';
+import BarChart from '../../components/BarChart.astro';
+import Timeline from '../../components/Timeline.astro';
+import HarmRadar from '../../components/HarmRadar.astro';
+import Card from '../../components/Card.astro';
+import Photo from '../../components/Photo.astro';
+import { substances, bySlug, countries, pad } from '../../data';
+import { familyById, type Target } from '../../data/families';
+import { comboKeys, risk, riskInfo, note, type Risk } from '../../data/interactions';
+
+export function getStaticPaths() {
+  return substances.map((s) => ({ params: { slug: s.slug } }));
+}
+
+const s = bySlug[Astro.params.slug!];
+const f = familyById[s.family];
+const i = substances.indexOf(s);
+const prev = substances[(i - 1 + substances.length) % substances.length];
+const next = substances[(i + 1) % substances.length];
+const siblings = substances.filter((x) => x.family === s.family && x.slug !== s.slug);
+const target: Target = s.target ?? f.target;
+const targetLabels: Partial<Record<Target, string>> = {
+  adenosina: 'Receptores de adenosina A1/A2A',
+  nachr: 'Receptor nicotínico α4β2',
+  gabaa: 'Receptor GABA-A',
+};
+const targetLabel = s.target ? targetLabels[s.target] ?? f.targetLabel : f.targetLabel;
+
+const order: Risk[] = ['X', 'U', 'C', 'S', 'N', 'D'];
+const combos = s.combo
+  ? comboKeys
+      .filter((k) => k.key !== s.combo)
+      .map((k) => ({ ...k, r: risk(s.combo!, k.key)!, note: note(s.combo!, k.key) }))
+      .sort((a, b) => order.indexOf(a.r) - order.indexOf(b.r))
+  : [];
+
+const alcohol = bySlug['alcohol'];
+const priceRows = s.prices
+  .map((p) => ({ name: countries[p.c] ?? p.c, v: p.v, note: p.unit }))
+  .sort((a, b) => b.v - a.v);
+const units = [...new Set(s.prices.map((p) => p.unit))];
+---
+<Layout title={s.name} description={s.summary}>
+  <article style={`--c:${f.color}`}>
+    <header class="hero">
+      <div class="wrap hero-in">
+        <div class="txt">
+          <div class="topline">
+            <span class="num">#{pad(s.n)}</span>
+            <a href={`/familias/${f.id}`} class="fam"><i></i>{f.name}</a>
+          </div>
+          <div class="sym">{s.symbol}</div>
+          <h1>{s.name}</h1>
+          <p class="cls">{s.cls}</p>
+          <div class="aka">
+            {s.aka.map((a) => <span class="chip">{a}</span>)}
+          </div>
+        </div>
+        <div class="art">
+          <Sigil slug={s.slug} color={f.color} symbol={s.symbol} n={s.n} detail />
+        </div>
+      </div>
+      <nav class="wrap pn">
+        <a href={`/sustancias/${prev.slug}`}>← #{pad(prev.n)} {prev.name}</a>
+        <a href={`/sustancias/${next.slug}`}>{next.name} #{pad(next.n)} →</a>
+      </nav>
+    </header>
+
+    <!-- 01 resumen -->
+    <section class="section">
+      <div class="wrap cols">
+        <div>
+          <span class="idx">01 / RESUMEN</span>
+          <p class="summary">{s.summary}</p>
+        </div>
+        <table class="data spec">
+          <tbody>
+            <tr><th>Familia</th><td><a href={`/familias/${f.id}`} style={`color:${f.color}`}>{f.name}</a></td></tr>
+            <tr><th>Clase química</th><td>{s.cls}</td></tr>
+            <tr><th>Vías</th><td>{s.routes.join(' · ')}</td></tr>
+            <tr><th>Diana</th><td>{targetLabel}</td></tr>
+            <tr><th>Estatus legal</th><td>{s.legal}</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- 02 imagen -->
+    <section class="section">
+      <div class="wrap">
+        <div class="section-head">
+          <span class="idx">02 / IMAGEN</span>
+          <div>
+            <h2>Foto, molécula & firma</h2>
+            <p>Fotografía real (Wikimedia Commons, licencia libre), estructura química (PubChem) y firma visual generativa, única para cada sustancia.</p>
+          </div>
+        </div>
+        <Photo slug={s.slug} name={s.name} />
+        <div class="imgs">
+          {s.pubchem ? <Structure name={s.name} query={s.pubchem} /> : <div class="panel"></div>}
+          <figure class="sig">
+            <Sigil slug={`${s.slug}-alt`} color={f.color} symbol={s.symbol} n={s.n} detail />
+            <figcaption><span class="label">Firma generativa · SVG vectorial</span><span class="label">{s.symbol}/{pad(s.n)}</span></figcaption>
+          </figure>
+        </div>
+      </div>
+    </section>
+
+    <!-- 03 mecanismo -->
+    <section class="section">
+      <div class="wrap cols">
+        <div>
+          <span class="idx">03 / MECANISMO DE ACCIÓN</span>
+          <h2 class="h">Cómo actúa</h2>
+          <p>{s.mechanism}</p>
+          <p class="mute">{f.mechanism}</p>
+        </div>
+        <div class="panel pad"><Synapse target={target} color={f.color} label={targetLabel} /></div>
+      </div>
+    </section>
+
+    <!-- 04 historia + consumo -->
+    <section class="section">
+      <div class="wrap cols">
+        <div>
+          <span class="idx">04 / ORIGEN</span>
+          <div class="year">{s.history.year}</div>
+          <p class="place">⌖ {s.history.place}</p>
+          <p>{s.history.text}</p>
+        </div>
+        <div>
+          <span class="idx">05 / DÓNDE SE CONSUME</span>
+          <ol class="regions">
+            {s.consumption.top.map((r, k) => <li><span>{String(k + 1).padStart(2, '0')}</span>{r}</li>)}
+          </ol>
+          <p class="mute">{s.consumption.text}</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- 06 precios -->
+    <section class="section">
+      <div class="wrap">
+        <div class="section-head">
+          <span class="idx">06 / MERCADO</span>
+          <div>
+            <h2>Precio estimado</h2>
+            <p>
+              Valores orientativos en euros por unidad típica de venta {units.length === 1 && <>(<b>{units[0]}</b>)</>}.
+              Estimaciones a partir de EUDA, UNODC, Global Drug Survey y prensa especializada (2022–2025). Varían mucho según ciudad, pureza y cantidad.
+            </p>
+          </div>
+        </div>
+        {priceRows.length > 0
+          ? <BarChart rows={priceRows} unit="€" decimals={priceRows.some((r) => r.v < 10 && r.v % 1) ? 1 : 0} color={f.color} />
+          : <p class="panel pad mute">{s.priceNote}</p>}
+        {priceRows.length > 0 && s.priceNote && <p class="mute small">{s.priceNote}</p>}
+      </div>
+    </section>
+
+    <!-- 07 efectos -->
+    <section class="section">
+      <div class="wrap">
+        <div class="section-head">
+          <span class="idx">07 / EFECTOS</span>
+          <div><h2>Efectos</h2></div>
+        </div>
+        <div class="fx">
+          <div><h3 class="acid">Buscados</h3><ul class="dash">{s.effects.pos.map((e) => <li>{e}</li>)}</ul></div>
+          <div><h3 style="color:#ffd23f">Adversos</h3><ul class="dash">{s.effects.neg.map((e) => <li>{e}</li>)}</ul></div>
+          <div><h3 class="red">Largo plazo</h3><ul class="dash">{s.effects.long.map((e) => <li>{e}</li>)}</ul></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 08 duración -->
+    {s.duration && (
+      <section class="section">
+        <div class="wrap">
+          <div class="section-head">
+            <span class="idx">08 / CURVA</span>
+            <div><h2>Duración</h2><p>Curva temporal típica: subida, meseta y bajada. Muy variable según dosis, vía, tolerancia y metabolismo.</p></div>
+          </div>
+          <Timeline rows={[{ name: s.name, d: s.duration, color: f.color }]} />
+        </div>
+      </section>
+    )}
+
+    <!-- 09 daño -->
+    <section class="section">
+      <div class="wrap cols">
+        <div>
+          <span class="idx">09 / PERFIL DE DAÑO</span>
+          <h2 class="h">Riesgo</h2>
+          <p>
+            Escala de 0 a 3 de Nutt, King, Saulsbury y Blakemore (The Lancet, 2007), que valora daño físico, potencial de dependencia y daño social.
+            La línea discontinua muestra el alcohol como referencia.
+          </p>
+          <h3 class="mt">Riesgos de la familia</h3>
+          <ul class="dash">{f.risks.map((r) => <li>{r}</li>)}</ul>
+        </div>
+        <HarmRadar harm={s.harm} color={f.color} compare={s.slug !== 'alcohol' ? { name: 'Alcohol', harm: alcohol.harm } : undefined} />
+      </div>
+    </section>
+
+    <!-- 10 combinaciones -->
+    {combos.length > 0 && (
+      <section class="section">
+        <div class="wrap">
+          <div class="section-head">
+            <span class="idx">10 / INTERACCIONES</span>
+            <div>
+              <h2>Combinaciones</h2>
+              <p>Riesgo de combinar {s.name} con otras sustancias, ordenado de mayor a menor. <a href="/combinaciones" class="acid">Ver la tabla completa →</a></p>
+            </div>
+          </div>
+          <div class="combos">
+            {combos.map((c) => (
+              <div class="combo" style={`--r:${riskInfo[c.r].color}`}>
+                <span class="tag">{riskInfo[c.r].short}</span>
+                <div>
+                  <strong>{c.label}</strong>
+                  <span class="lbl">{riskInfo[c.r].label}</span>
+                  {c.note && <p>{c.note}</p>}
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+    )}
+
+    <!-- 11 reducción -->
+    <section class="section rr">
+      <div class="wrap cols">
+        <div>
+          <span class="idx">11 / REDUCCIÓN DE RIESGOS</span>
+          <h2 class="h">Si vas a consumir</h2>
+        </div>
+        <ol class="tips">
+          {s.reduction.map((r, k) => <li><span>{String(k + 1).padStart(2, '0')}</span>{r}</li>)}
+        </ol>
+      </div>
+    </section>
+
+    {siblings.length > 0 && (
+      <section class="section">
+        <div class="wrap">
+          <div class="section-head">
+            <span class="idx">12 / FAMILIA</span>
+            <div><h2>Más {f.name.toLowerCase()}</h2></div>
+          </div>
+          <div class="sib">{siblings.map((x) => <Card s={x} />)}</div>
+        </div>
+      </section>
+    )}
+  </article>
+</Layout>
+
+<style>
+  .hero { border-bottom: 1px solid var(--line); background: radial-gradient(ellipse at 80% 40%, color-mix(in srgb, var(--c) 10%, transparent), transparent 60%); }
+  .hero-in { display: grid; grid-template-columns: 1.1fr 1fr; gap: 40px; align-items: center; padding-top: 48px; padding-bottom: 48px; }
+  .topline { display: flex; gap: 16px; align-items: center; }
+  .num { font-size: 13px; color: var(--mute); letter-spacing: 0.1em; }
+  .fam { display: inline-flex; gap: 8px; align-items: center; font-size: 11px; text-transform: uppercase; letter-spacing: 0.14em; color: var(--c); border: 1px solid var(--c); padding: 4px 10px; }
+  .fam i { width: 8px; height: 8px; background: var(--c); }
+  .fam:hover { background: var(--c); color: #000; }
+  .fam:hover i { background: #000; }
+  .sym { font-family: var(--display); font-weight: 900; font-stretch: 125%; font-size: 26px; color: var(--c); margin-top: 28px; }
+  h1 { font-size: clamp(48px, 9vw, 140px); margin: 4px 0 18px; overflow-wrap: anywhere; }
+  .cls { color: var(--mute); margin: 0 0 20px; }
+  .aka { display: flex; flex-wrap: wrap; gap: 6px; }
+  .art { aspect-ratio: 1; border: 1px solid var(--line-2); max-width: 540px; width: 100%; justify-self: end; }
+  .art :global(svg) { width: 100%; height: 100%; }
+  .pn { display: flex; justify-content: space-between; gap: 12px; padding-top: 14px; padding-bottom: 14px; border-top: 1px solid var(--line); font-size: 11px; text-transform: uppercase; letter-spacing: 0.1em; color: var(--mute); }
+  @media (max-width: 860px) { .hero-in { grid-template-columns: 1fr; } .art { justify-self: start; } }
+
+  .idx { display: block; font-size: 11px; color: var(--acid); letter-spacing: 0.14em; margin-bottom: 18px; }
+  .cols { display: grid; grid-template-columns: 1fr 1fr; gap: 56px; align-items: start; }
+  @media (max-width: 860px) { .cols { grid-template-columns: 1fr; gap: 32px; } }
+  .summary { font-family: var(--display); font-weight: 500; font-stretch: 100%; font-size: clamp(18px, 2vw, 24px); line-height: 1.35; margin: 0; }
+  .spec th { width: 140px; vertical-align: top; }
+  .h { margin-bottom: 20px; }
+  .mute { color: var(--mute); }
+  .small { font-size: 12px; margin-top: 16px; }
+  .pad { padding: 20px; }
+  .mt { margin-top: 28px; margin-bottom: 8px; }
+
+  .imgs { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  .sig { margin: 0; border: 1px solid var(--line); }
+  .sig :global(svg) { width: 100%; aspect-ratio: 1; }
+  .sig figcaption { display: flex; justify-content: space-between; padding: 10px 12px; border-top: 1px solid var(--line); }
+  @media (max-width: 700px) { .imgs { grid-template-columns: 1fr; } }
+
+  .year { font-family: var(--display); font-weight: 900; font-stretch: 125%; font-size: clamp(64px, 10vw, 140px); line-height: 0.85; color: var(--c); }
+  .place { text-transform: uppercase; letter-spacing: 0.1em; font-size: 12px; margin: 16px 0; }
+  .regions { list-style: none; padding: 0; margin: 0 0 20px; }
+  .regions li { display: flex; gap: 16px; padding: 12px 0; border-bottom: 1px solid var(--line); font-size: 15px; }
+  .regions span { color: var(--c); font-size: 11px; padding-top: 3px; }
+
+  .fx { display: grid; grid-template-columns: repeat(3, 1fr); gap: 32px; }
+  .fx h3 { margin-bottom: 12px; }
+  @media (max-width: 860px) { .fx { grid-template-columns: 1fr; } }
+
+  .combos { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 8px; }
+  .combo { display: grid; grid-template-columns: 48px 1fr; gap: 12px; padding: 12px; border: 1px solid var(--line); border-left: 3px solid var(--r); background: var(--bg-2); }
+  .tag { background: var(--r); color: #000; font-weight: 700; font-size: 10px; height: 26px; display: grid; place-items: center; }
+  .combo strong { display: block; font-family: var(--display); text-transform: uppercase; font-stretch: 112%; font-size: 15px; }
+  .lbl { font-size: 11px; color: var(--r); text-transform: uppercase; letter-spacing: 0.08em; }
+  .combo p { margin: 6px 0 0; font-size: 12px; color: var(--mute); }
+
+  .rr { background: var(--acid); color: #000; border-top: 0; }
+  .rr .idx { color: #000; }
+  .tips { list-style: none; padding: 0; margin: 0; }
+  .tips li { display: flex; gap: 18px; padding: 14px 0; border-bottom: 1px solid rgba(0, 0, 0, 0.25); font-size: 15px; font-weight: 500; }
+  .tips span { font-size: 11px; padding-top: 4px; }
+
+  .sib { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 12px; }
+</style>

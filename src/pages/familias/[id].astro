@@ -1,0 +1,86 @@
+---
+import Layout from '../../layouts/Layout.astro';
+import Card from '../../components/Card.astro';
+import Synapse from '../../components/Synapse.astro';
+import Timeline from '../../components/Timeline.astro';
+import BarChart from '../../components/BarChart.astro';
+import { families } from '../../data/families';
+import { substances } from '../../data';
+
+export function getStaticPaths() {
+  return families.map((f) => ({ params: { id: f.id } }));
+}
+
+const f = families.find((x) => x.id === Astro.params.id)!;
+const list = substances.filter((s) => s.family === f.id);
+const durRows = list
+  .filter((s) => s.duration)
+  .map((s) => ({ name: s.name, d: s.duration!, color: f.color, href: `/sustancias/${s.slug}` }));
+const harmRows = list
+  .map((s) => ({ name: s.name, v: Math.round(((s.harm.physical + s.harm.dependence + s.harm.social) / 3) * 100) / 100, href: `/sustancias/${s.slug}` }))
+  .sort((a, b) => b.v - a.v);
+---
+<Layout title={f.name} description={f.description}>
+  <div style={`--c:${f.color}`}>
+    <section class="hero">
+      <div class="wrap">
+        <span class="label">Familia · {f.code} · {list.length} sustancias</span>
+        <h1>{f.name}</h1>
+        <p class="tag">{f.tagline}</p>
+      </div>
+    </section>
+
+    <section class="section">
+      <div class="wrap cols">
+        <div>
+          <span class="idx">01 / DESCRIPCIÓN</span>
+          <p class="big">{f.description}</p>
+          <h3 class="mt">Mecanismo</h3>
+          <p class="mute">{f.mechanism}</p>
+          <h3 class="mt">Riesgos principales</h3>
+          <ul class="dash">{f.risks.map((r) => <li>{r}</li>)}</ul>
+        </div>
+        <div class="panel pad"><Synapse target={f.target} color={f.color} label={f.targetLabel} /></div>
+      </div>
+    </section>
+
+    <section class="section">
+      <div class="wrap">
+        <div class="section-head"><span class="idx">02 / MIEMBROS</span><div><h2>Sustancias</h2></div></div>
+        <div class="grid">{list.map((s) => <Card s={s} />)}</div>
+      </div>
+    </section>
+
+    {durRows.length > 1 && (
+      <section class="section">
+        <div class="wrap">
+          <div class="section-head"><span class="idx">03 / DURACIÓN</span><div><h2>Comparativa temporal</h2><p>Escala logarítmica. Subida, meseta y bajada típicas.</p></div></div>
+          <Timeline log rows={durRows} />
+        </div>
+      </section>
+    )}
+
+    {list.length > 1 && (
+      <section class="section">
+        <div class="wrap">
+          <div class="section-head"><span class="idx">04 / DAÑO</span><div><h2>Daño medio</h2><p>Media de daño físico, dependencia y daño social (0–3, escala Nutt 2007).</p></div></div>
+          <BarChart rows={harmRows} max={3} decimals={2} color={f.color} />
+        </div>
+      </section>
+    )}
+  </div>
+</Layout>
+
+<style>
+  .hero { border-bottom: 1px solid var(--line); padding: 64px 0 48px; background: linear-gradient(180deg, color-mix(in srgb, var(--c) 14%, transparent), transparent); }
+  h1 { font-size: clamp(56px, 13vw, 200px); margin: 16px 0; color: var(--c); overflow-wrap: anywhere; }
+  .tag { text-transform: uppercase; letter-spacing: 0.14em; font-size: 13px; margin: 0; }
+  .idx { display: block; font-size: 11px; color: var(--acid); letter-spacing: 0.14em; margin-bottom: 18px; }
+  .cols { display: grid; grid-template-columns: 1fr 1fr; gap: 56px; align-items: start; }
+  @media (max-width: 860px) { .cols { grid-template-columns: 1fr; } }
+  .big { font-family: var(--display); font-weight: 500; font-size: clamp(17px, 1.8vw, 22px); line-height: 1.4; margin: 0; }
+  .mt { margin: 28px 0 10px; }
+  .mute { color: var(--mute); }
+  .pad { padding: 20px; }
+  .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 12px; }
+</style>

@@ -1,0 +1,188 @@
+---
+import Layout from '../layouts/Layout.astro';
+import Sigil from '../components/Sigil.astro';
+import Wheel from '../components/Wheel.astro';
+import BarChart from '../components/BarChart.astro';
+import { substances, pad } from '../data';
+import { families, familyById } from '../data/families';
+import { comboKeys } from '../data/interactions';
+import { nutt2010 } from '../data/stats';
+
+const combos = (comboKeys.length * (comboKeys.length - 1)) / 2;
+const ticker = [
+  'NO MEZCLES DEPRESORES',
+  'ANALIZA TU SUSTANCIA',
+  'NUNCA CONSUMAS SOLO',
+  'HIDRÁTATE CON MODERACIÓN',
+  'SET & SETTING',
+  'EMERGENCIA: 112',
+  'EMPIEZA CON POCO, ESPERA',
+  'DESCANSA DEL BAILE',
+];
+---
+<Layout>
+  <section class="hero grid-lines">
+    <div class="wrap hero-in">
+      <div class="hero-txt">
+        <span class="label">Enciclopedia de sustancias psicoactivas · v1.0</span>
+        <h1 class="mega">Droge<br />dex<span class="acid">.</span></h1>
+        <p class="lede">
+          Una wikipedia underground de las drogas: familias, mecanismos, historia, mercados, efectos y combinaciones peligrosas.
+          Información rigurosa, sin moralina y con enfoque de <strong>reducción de riesgos</strong>.
+        </p>
+        <div class="cta">
+          <a href="/sustancias" class="btn solid">Explorar índice →</a>
+          <a href="/combinaciones" class="btn">Tabla de combinaciones</a>
+        </div>
+      </div>
+      <div class="hero-art">
+        <Sigil slug="drogedex-hero" color="#d4ff3a" symbol="DX" n={0} detail />
+      </div>
+    </div>
+
+    <div class="ticker" aria-hidden="true">
+      <div class="track">
+        {[...ticker, ...ticker, ...ticker].map((t) => <span>{t}<i>✕</i></span>)}
+      </div>
+    </div>
+  </section>
+
+  <section class="stats">
+    <div class="wrap stats-in">
+      <div><span class="big">{pad(substances.length)}</span><span class="label">Sustancias</span></div>
+      <div><span class="big">{pad(families.length)}</span><span class="label">Familias</span></div>
+      <div><span class="big">{combos}</span><span class="label">Combinaciones evaluadas</span></div>
+      <div><span class="big">292<small>M</small></span><span class="label">Personas consumieron drogas ilegales en 2022 (UNODC)</span></div>
+    </div>
+  </section>
+
+  <section class="section">
+    <div class="wrap">
+      <div class="section-head">
+        <span class="idx">01 / TABLA</span>
+        <div>
+          <h2>Tabla periódica<br />de sustancias</h2>
+          <p>Cada sustancia tiene un número, un símbolo y un color de familia. Pulsa sobre cualquiera para abrir su ficha.</p>
+        </div>
+      </div>
+
+      <div class="ptable">
+        {substances.map((s) => {
+          const f = familyById[s.family];
+          return (
+            <a href={`/sustancias/${s.slug}`} class="el" style={`--c:${f.color}`} title={`${s.name} — ${f.name}`}>
+              <span class="n">{s.n}</span>
+              <span class="sy">{s.symbol}</span>
+              <span class="nm">{s.name}</span>
+            </a>
+          );
+        })}
+      </div>
+      <div class="fam-legend">
+        {families.map((f) => (
+          <a href={`/familias/${f.id}`} style={`--c:${f.color}`}><i></i>{f.name}</a>
+        ))}
+      </div>
+    </div>
+  </section>
+
+  <section class="section">
+    <div class="wrap two">
+      <div class="section-head col">
+        <span class="idx">02 / ESQUEMA</span>
+        <div>
+          <h2>El triángulo<br />de los efectos</h2>
+          <p>
+            Clasificación clásica de las sustancias psicoactivas según su efecto predominante sobre el sistema nervioso central:
+            estimulante, depresor o alucinógeno. Muchas familias ocupan posiciones intermedias.
+          </p>
+          <p><a href="/familias" class="btn">Ver las 9 familias →</a></p>
+        </div>
+      </div>
+      <Wheel />
+    </div>
+  </section>
+
+  <section class="section">
+    <div class="wrap">
+      <div class="section-head">
+        <span class="idx">03 / DATOS</span>
+        <div>
+          <h2>¿Qué droga hace<br />más daño?</h2>
+          <p>
+            Análisis de decisión multicriterio de Nutt, King y Phillips (The Lancet, 2010): 16 criterios de daño para quien consume y para terceros.
+            El alcohol encabeza la clasificación por su enorme daño social.
+          </p>
+        </div>
+      </div>
+      <BarChart rows={nutt2010.slice(0, 10)} max={100} />
+      <p style="margin-top:24px"><a href="/graficos" class="btn">Todos los gráficos →</a></p>
+    </div>
+  </section>
+
+  <section class="section manifesto">
+    <div class="wrap">
+      <span class="label acid">// Manifiesto</span>
+      <p class="mf">
+        La gente va a consumir. La pregunta es si lo hará <span class="acid">informada</span> o a ciegas.
+        La reducción de riesgos y daños es un enfoque de salud pública avalado por la OMS y el Plan Nacional sobre Drogas.
+      </p>
+    </div>
+  </section>
+</Layout>
+
+<style>
+  .hero { position: relative; border-bottom: 1px solid var(--line); overflow: hidden; }
+  .hero-in { display: grid; grid-template-columns: 1.2fr 1fr; gap: 40px; align-items: center; padding-top: clamp(40px, 8vw, 100px); padding-bottom: clamp(60px, 8vw, 110px); }
+  .mega { font-size: clamp(72px, 15vw, 230px); line-height: 0.8; margin: 20px 0 28px; letter-spacing: -0.04em; }
+  .lede { font-size: 15px; max-width: 54ch; color: #c9c9c4; }
+  .lede strong { color: var(--acid); font-weight: 500; }
+  .cta { display: flex; gap: 12px; flex-wrap: wrap; margin-top: 28px; }
+  .hero-art { aspect-ratio: 1; border: 1px solid var(--line-2); border-radius: 50%; overflow: hidden; max-width: 560px; width: 100%; justify-self: end; box-shadow: 0 0 80px rgba(212, 255, 58, 0.08); }
+  .hero-art :global(svg) { width: 100%; height: 100%; animation: spin 120s linear infinite; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  @media (max-width: 860px) { .hero-in { grid-template-columns: 1fr; } .hero-art { justify-self: start; max-width: 420px; } }
+
+  .ticker { border-top: 1px solid var(--line); background: var(--acid); color: #000; overflow: hidden; white-space: nowrap; }
+  .track { display: inline-flex; animation: marquee 40s linear infinite; }
+  .track span { padding: 10px 0; font-size: 12px; font-weight: 700; letter-spacing: 0.14em; }
+  .track i { font-style: normal; margin: 0 24px; }
+  @keyframes marquee { to { transform: translateX(-33.333%); } }
+
+  .stats { border-bottom: 1px solid var(--line); }
+  .stats-in { display: grid; grid-template-columns: repeat(4, 1fr); }
+  .stats-in > div { padding: 28px 20px; border-left: 1px solid var(--line); display: flex; flex-direction: column; gap: 6px; }
+  .stats-in > div:first-child { border-left: 0; padding-left: 0; }
+  .big { font-family: var(--display); font-weight: 900; font-stretch: 125%; font-size: clamp(36px, 5vw, 64px); line-height: 1; }
+  .big small { font-size: 0.5em; color: var(--acid); }
+  @media (max-width: 760px) { .stats-in { grid-template-columns: 1fr 1fr; } .stats-in > div:nth-child(3) { border-left: 0; padding-left: 0; } .stats-in > div { border-top: 1px solid var(--line); } }
+
+  .ptable { display: grid; grid-template-columns: repeat(auto-fill, minmax(104px, 1fr)); gap: 4px; }
+  .el {
+    aspect-ratio: 1;
+    border: 1px solid color-mix(in srgb, var(--c) 45%, transparent);
+    background: color-mix(in srgb, var(--c) 6%, var(--bg));
+    padding: 8px;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    transition: background 0.15s;
+  }
+  .el:hover { background: var(--c); color: #000; }
+  .el:hover .n, .el:hover .nm { color: #000; }
+  .el .n { font-size: 10px; color: var(--mute); }
+  .el .sy { font-family: var(--display); font-weight: 900; font-stretch: 125%; font-size: 34px; line-height: 1; color: var(--c); }
+  .el:hover .sy { color: #000; }
+  .el .nm { font-size: 10px; text-transform: uppercase; letter-spacing: 0.04em; color: var(--fg); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .fam-legend { display: flex; flex-wrap: wrap; gap: 8px 22px; margin-top: 20px; font-size: 11px; text-transform: uppercase; letter-spacing: 0.1em; }
+  .fam-legend a { display: flex; align-items: center; gap: 8px; color: var(--mute); }
+  .fam-legend a:hover { color: var(--c); }
+  .fam-legend i { width: 10px; height: 10px; background: var(--c); }
+
+  .two { display: grid; grid-template-columns: 0.8fr 1.2fr; gap: 40px; align-items: center; }
+  .section-head.col { grid-template-columns: 1fr; gap: 12px; }
+  @media (max-width: 960px) { .two { grid-template-columns: 1fr; } }
+
+  .manifesto { background: var(--bg-2); }
+  .mf { font-family: var(--display); font-weight: 800; font-stretch: 112%; font-size: clamp(24px, 3.4vw, 46px); line-height: 1.08; max-width: 26ch; margin: 18px 0 0; text-transform: uppercase; }
+</style>
