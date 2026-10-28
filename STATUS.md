@@ -3,11 +3,10 @@
 > Lo mantiene Claude con `/cerrar`. Es la memoria de trabajo: dónde se quedó y qué viene después.
 
 ## Estado actual
-En la rama `fusion` (sin publicar todavía) la web reúne los tres diseños: **Original** en `/`, **Nave** en `/nave` y **Hormigón** en `/hormigon`, con un selector para cambiar de diseño en cualquier página. La Original ya tiene todo lo que tenían Nave y Hormigón: 13 secciones, buscador, comprobador de mezclas, comparador, psicología, mapa, cronología, glosario, emergencias y galería. Compila (177 páginas) y está revisada en el navegador. `main` sigue con la versión antigua hasta que se fusione `fusion`. La versión anterior está guardada en la rama `original`.
+Publicada en drogedex.vercel.app (`main`): la web reúne los tres diseños, **Original** en `/`, **Nave** en `/nave` y **Hormigón** en `/hormigon`, con un selector para cambiar de diseño en cualquier página. La Original ya tiene todo lo que tenían Nave y Hormigón: 13 secciones, buscador, comprobador de mezclas, comparador, psicología, mapa, cronología, glosario, emergencias y galería. Compila (177 páginas). La versión anterior a la fusión está en la rama `original`.
 
 ## Siguientes pasos
-- [ ] Subir la rama `fusion` y revisar la vista previa que crea Vercel (todas las secciones, en móvil y escritorio, en los tres diseños)
-- [ ] Fusionar `fusion` en `main` para publicarla en drogedex.vercel.app
+- [ ] Revisar la web publicada en escritorio (en el navegador solo se comprobó a ancho de móvil)
 - [ ] Decidir qué hacer con drogedex-nave.vercel.app y drogedex-beton.vercel.app: mantenerlas o redirigirlas a /nave y /hormigon
 - [ ] Revisar el contenido con criterio del TFG: fuentes de cada dato, sustancias con daños `est` (estimación editorial) y textos de reducción de riesgos
 - [ ] Comprobar en el navegador la impresión / PDF de una ficha en el diseño Original
@@ -16,6 +15,7 @@ En la rama `fusion` (sin publicar todavía) la web reúne los tres diseños: **O
 ### 2026-10-28
 - Fusión de los tres diseños: datos comunes en `src/data` (más glosario, cronología, mitos, emergencias, rutas, psicología y salas); Nave y Hormigón importados con `scripts/importar-diseno.mjs` (`npm run disenos`) bajo `/nave` y `/hormigon`; selector de diseño (`ThemeSwitch`) en los tres layouts, que conserva la página y los parámetros; URL canónica de Nave y Hormigón apuntando a la Original.
 - Original al día: 8 secciones nuevas (Mezclas, Comparar, Psicología, Mapa, Cronología, Glosario, Emergencias, Galería) con su estética; layout con menú «Más», buscador (`/`) y botón 112; portada con Herramientas y Mitos; ficha con citar APA, imprimir, comparar, enlace al comprobador, glosario y teclas ← →.
+- Subidas las ramas `fusion` y `original`; vista previa de Vercel correcta; `fusion` fusionada en `main` (avance rápido) y publicada.
 - Recuperado `scripts/photo-candidates.mjs` (estaba en Nave). Nuevas dependencias para el mapa: `d3-geo`, `topojson-client`, `world-atlas`.
 - Antes: creadas las fichas `CLAUDE.md` y `STATUS.md`; drogedex.vercel.app responde.
 
