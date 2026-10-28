@@ -1,0 +1,78 @@
+---
+import Layout from '../../../themes/hormigon/layouts/Layout.astro';
+import Ticket from '../../../themes/hormigon/components/Ticket.astro';
+import Synapse from '../../../themes/hormigon/components/Synapse.astro';
+import Timeline from '../../../themes/hormigon/components/Timeline.astro';
+import Bars from '../../../themes/hormigon/components/Bars.astro';
+import { families } from '../../../data/families';
+import { substances } from '../../../data';
+import { paper } from '../../../themes/hormigon/lib/tone';
+
+export function getStaticPaths() {
+  return families.map((f) => ({ params: { id: f.id } }));
+}
+
+const f = families.find((x) => x.id === Astro.params.id)!;
+const tone = paper[f.id];
+const list = substances.filter((s) => s.family === f.id);
+const durRows = list.filter((s) => s.duration).map((s) => ({ name: s.name, d: s.duration!, href: `/sustancias/${s.slug}` }));
+const avg = (h: { physical: number; dependence: number; social: number }) => Math.round(((h.physical + h.dependence + h.social) / 3) * 100) / 100;
+const harmRows = list.map((s) => ({ name: s.name, v: avg(s.harm), href: `/sustancias/${s.slug}` })).sort((a, b) => b.v - a.v);
+---
+<Layout title={f.name} description={f.description}>
+  <section class="wrap top" style={`--tone:${tone}`}>
+    <p class="lbl"><span class="sw"></span>Familia {f.code} · {list.length} sustancias</p>
+    <h1>{f.name}</h1>
+    <p class="tag">{f.tagline}</p>
+  </section>
+
+  <section class="block">
+    <div class="wrap two">
+      <div>
+        <p class="lede">{f.description}</p>
+        <h3>Mecanismo</h3>
+        <p class="mute">{f.mechanism}</p>
+        <h3>Riesgos</h3>
+        <ul class="dash">{f.risks.map((r) => <li>{r}</li>)}</ul>
+      </div>
+      <Synapse target={f.target} label={f.targetLabel} />
+    </div>
+  </section>
+
+  <section class="block">
+    <div class="wrap">
+      <div class="head"><span class="lbl">Miembros</span><div><h2>Tickets</h2></div></div>
+      <div class="tickets">{list.map((s) => <Ticket s={s} />)}</div>
+    </div>
+  </section>
+
+  {durRows.length > 1 && (
+    <section class="block">
+      <div class="wrap">
+        <div class="head"><span class="lbl">Tiempo</span><div><h2>Duración</h2><p>Escala logarítmica.</p></div></div>
+        <Timeline log rows={durRows} />
+      </div>
+    </section>
+  )}
+
+  {harmRows.length > 1 && (
+    <section class="block">
+      <div class="wrap">
+        <div class="head"><span class="lbl">Daño</span><div><h2>Daño medio</h2><p>Media de físico, dependencia y social (0–3).</p></div></div>
+        <Bars rows={harmRows} max={3} decimals={2} />
+      </div>
+    </section>
+  )}
+</Layout>
+
+<style>
+  .top { padding-top: 56px; padding-bottom: 48px; }
+  .sw { display: inline-block; width: 22px; height: 12px; background: var(--tone); margin-right: 10px; vertical-align: middle; }
+  h1 { margin: 14px 0 12px; overflow-wrap: anywhere; }
+  .tag { text-transform: uppercase; letter-spacing: 0.14em; font-size: 12px; color: var(--mute); }
+  .two { display: grid; grid-template-columns: 1fr 1fr; gap: clamp(32px, 6vw, 80px); align-items: start; }
+  @media (max-width: 860px) { .two { grid-template-columns: 1fr; } }
+  .lede { font-size: clamp(17px, 1.8vw, 21px); line-height: 1.5; margin: 0 0 28px; }
+  h3 { margin: 24px 0 8px; }
+  .tickets { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(190px, 100%), 1fr)); gap: 14px 12px; }
+</style>

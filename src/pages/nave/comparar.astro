@@ -1,0 +1,158 @@
+---
+import Layout from '../../themes/nave/layouts/Layout.astro';
+import { substances } from '../../data';
+import { familyById } from '../../data/families';
+import { comboKeys, risk, riskInfo, note } from '../../themes/nave/data/interactions';
+import { paper } from '../../themes/nave/lib/tone';
+
+const data = Object.fromEntries(substances.map((s) => {
+  const f = familyById[s.family];
+  const es = s.prices.find((p) => p.c === 'ES');
+  return [s.slug, {
+    name: s.name, n: s.n, sym: s.symbol, fam: f.name, tone: paper[s.family], cls: s.cls,
+    target: f.targetLabel, routes: s.routes.join(' · '), year: s.history.year, place: s.history.place,
+    harm: s.harm, dur: s.duration ?? null, combo: s.combo ?? null,
+    es: es ? `${es.v.toLocaleString('es-ES')} € / ${es.unit}` : '—',
+    priceRange: s.prices.length ? `${Math.min(...s.prices.map((p) => p.v))}–${Math.max(...s.prices.map((p) => p.v))} €` : '—',
+    legal: s.legal,
+    top: s.consumption.top[0],
+  }];
+}));
+const table: Record<string, { r: string; n: string }> = {};
+for (const a of comboKeys) for (const b of comboKeys) if (a.key !== b.key) table[`${a.key}|${b.key}`] = { r: risk(a.key, b.key)!, n: note(a.key, b.key) ?? '' };
+---
+<Layout title="Comparar" description="Compara dos sustancias cara a cara.">
+  <section class="wrap top">
+    <p class="lbl">Sala 05 · cara a cara</p>
+    <h1>Comparar</h1>
+    <div class="sel">
+      <select id="a" aria-label="Sustancia A">{substances.map((s) => <option value={s.slug}>{s.name}</option>)}</select>
+      <span class="vs st">vs</span>
+      <select id="b" aria-label="Sustancia B">{substances.map((s) => <option value={s.slug}>{s.name}</option>)}</select>
+    </div>
+  </section>
+
+  <section class="block">
+    <div class="wrap grid">
+      <div>
+        <p class="lbl">Perfil de daño (0–3)</p>
+        <svg id="radar" viewBox="0 0 400 370" role="img" aria-label="Radar comparativo"></svg>
+        <p class="leg"><span class="lbl"><i class="ia"></i><b id="la"></b></span><span class="lbl"><i class="ib"></i><b id="lb"></b></span></p>
+      </div>
+      <div>
+        <p class="lbl">Ficha</p>
+        <table class="data cmp"><thead><tr><th></th><th id="ha"></th><th id="hb"></th></tr></thead><tbody id="rows"></tbody></table>
+      </div>
+    </div>
+  </section>
+
+  <section class="block">
+    <div class="wrap">
+      <div class="head"><span class="lbl">Tiempo</span><div><h2>Duración</h2><p>Mismo eje logarítmico para ambas.</p></div></div>
+      <div id="dur"></div>
+    </div>
+  </section>
+
+  <section class="block">
+    <div class="wrap">
+      <div class="head"><span class="lbl">Juntas</span><div><h2>¿Se pueden mezclar?</h2></div></div>
+      <div id="mix" class="mix"></div>
+    </div>
+  </section>
+</Layout>
+
+<script define:vars={{ data, table, riskInfo }}>
+  const $ = (id) => document.getElementById(id);
+  const A = $('a'), B = $('b');
+  const qs = new URLSearchParams(location.search);
+  A.value = data[qs.get('a')] ? qs.get('a') : 'mdma';
+  B.value = data[qs.get('b')] ? qs.get('b') : 'alcohol';
+
+  const axes = [['physical', 'FÍSICO', -90], ['dependence', 'DEPENDENCIA', 30], ['social', 'SOCIAL', 150]];
+  const pt = (a, v) => { const r = (a * Math.PI) / 180; return [200 + Math.cos(r) * 140 * (v / 3), 200 + Math.sin(r) * 140 * (v / 3)]; };
+  const poly = (h) => axes.map(([k, , a]) => pt(a, h[k]).map((n) => n.toFixed(1)).join(',')).join(' ');
+  const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]);
+
+  function radar(a, b) {
+    let s = '';
+    [1, 2, 3].forEach((lv) => (s += `<polygon points="${axes.map(([, , an]) => pt(an, lv).join(',')).join(' ')}" fill="none" stroke="var(--line-2)" stroke-dasharray="2 4"/>`));
+    axes.forEach(([, l, an]) => { const [x, y] = pt(an, 3); const [lx, ly] = pt(an, 3.4); s += `<line x1="200" y1="200" x2="${x}" y2="${y}" stroke="var(--line-2)"/><text x="${lx}" y="${ly + 4}" text-anchor="middle" font-family="IBM Plex Mono" font-size="11" letter-spacing="2" fill="var(--mute)">${l}</text>`; });
+    s += `<polygon points="${poly(a.harm)}" fill="var(--paper)" fill-opacity=".8" stroke="var(--paper)"/>`;
+    s += `<polygon points="${poly(b.harm)}" fill="var(--hazard)" fill-opacity=".5" stroke="var(--hazard)" stroke-width="2"/>`;
+    $('radar').innerHTML = s;
+  }
+
+  const MIN = 1 / 60, MAX = 36;
+  const lp = (h) => ((Math.log10(Math.max(h, MIN)) - Math.log10(MIN)) / (Math.log10(MAX) - Math.log10(MIN))) * 100;
+  const fmtH = (h) => (h < 1 / 60 ? `${Math.round(h * 3600)} s` : h < 1 ? `${Math.round(h * 60)} min` : `${Math.round(h * 10) / 10} h`);
+  function dur(a, b) {
+    const ticks = [[1 / 60, '1 min'], [0.25, '15 min'], [1, '1 h'], [3, '3 h'], [8, '8 h'], [24, '24 h']];
+    let s = `<div class="ax">${ticks.map(([h, l]) => `<span style="left:${lp(h)}%">${l}</span>`).join('')}</div>`;
+    [[a, 'var(--paper)'], [b, 'var(--hazard)']].forEach(([x, c]) => {
+      if (!x.dur) { s += `<div class="ln"><span class="nm">${esc(x.name)}</span><span class="na">Sin datos</span></div>`; return; }
+      const d = x.dur, p = [lp(d.onset), lp(d.peak[0]), lp(d.peak[1]), lp(d.total)];
+      s += `<div class="ln"><span class="nm">${esc(x.name)}</span><span class="lane">${ticks.map(([h]) => `<i style="left:${lp(h)}%"></i>`).join('')}<svg viewBox="0 0 100 10" preserveAspectRatio="none"><path d="M${p[0]} 10 L${p[1]} 1 L${p[2]} 1 L${p[3]} 10 Z" fill="${c}"/></svg></span><span class="tt">${fmtH(d.total)}</span></div>`;
+    });
+    $('dur').innerHTML = s;
+  }
+
+  function mix(a, b) {
+    if (!a.combo || !b.combo) { $('mix').innerHTML = '<p class="mute">No hay datos de interacción para alguna de las dos.</p>'; return; }
+    const p = a.combo === b.combo ? { r: 'C', n: 'Misma clase farmacológica: efectos y riesgos se suman.' } : table[`${a.combo}|${b.combo}`];
+    const info = riskInfo[p.r];
+    $('mix').innerHTML = `<div class="mx" style="--r:${info.color}"><span class="st">${esc(a.name)} + ${esc(b.name)}</span><b>${info.label}</b><p>${esc(p.n || info.text)}</p></div>`;
+  }
+
+  function render() {
+    const a = data[A.value], b = data[B.value];
+    history.replaceState(null, '', `?a=${A.value}&b=${B.value}`);
+    $('la').textContent = a.name; $('lb').textContent = b.name;
+    $('ha').textContent = a.name; $('hb').textContent = b.name;
+    const avg = (h) => ((h.physical + h.dependence + h.social) / 3).toFixed(2);
+    const rows = [
+      ['Nº', `#${String(a.n).padStart(3, '0')}`, `#${String(b.n).padStart(3, '0')}`],
+      ['Familia', a.fam, b.fam], ['Diana', a.target, b.target], ['Vías', a.routes, b.routes],
+      ['Origen', `${a.year} · ${a.place}`, `${b.year} · ${b.place}`], ['Más consumo', a.top, b.top],
+      ['Precio ES', a.es, b.es], ['Rango precios', a.priceRange, b.priceRange],
+      ['Daño medio', avg(a.harm), avg(b.harm)],
+    ];
+    $('rows').innerHTML = rows.map(([k, x, y]) => `<tr><th>${k}</th><td>${esc(x)}</td><td>${esc(y)}</td></tr>`).join('');
+    radar(a, b); dur(a, b); mix(a, b);
+  }
+  A.onchange = B.onchange = render;
+  render();
+</script>
+
+<style>
+  .top { padding-top: 56px; padding-bottom: 20px; }
+  h1 { margin: 10px 0 26px; }
+  .sel { display: flex; flex-wrap: wrap; gap: 16px; align-items: center; }
+  select { background: var(--soot); color: var(--paper); border: 0; border-bottom: 2px solid var(--paper); font-family: var(--stencil); font-weight: 800; font-size: clamp(28px, 4.5vw, 52px); text-transform: uppercase; padding: 4px 8px 4px 0; cursor: pointer; max-width: 100%; }
+  #b { border-color: var(--hazard); color: var(--hazard); }
+  .vs { font-size: 28px; color: var(--mute); }
+  .grid { display: grid; grid-template-columns: 1fr 1.2fr; gap: 48px; }
+  @media (max-width: 860px) { .grid { grid-template-columns: 1fr; } }
+  #radar { width: 100%; max-width: 420px; }
+  .leg { display: flex; gap: 20px; justify-content: center; }
+  .leg i { display: inline-block; width: 18px; height: 8px; margin-right: 6px; vertical-align: middle; }
+  .ia { background: var(--paper); } .ib { background: var(--hazard); }
+  .leg b { font-weight: 500; color: var(--paper); }
+  .cmp th { width: 130px; }
+  .cmp thead th { color: var(--paper); font-family: var(--stencil); font-weight: 800; font-size: 20px; letter-spacing: 0; }
+  .cmp thead th:last-child { color: var(--hazard); }
+  .cmp td { padding-right: 14px; }
+  #dur :global(.ax) { position: relative; height: 20px; margin-left: 150px; margin-right: 60px; font-size: 10px; color: var(--mute); }
+  #dur :global(.ax span) { position: absolute; transform: translateX(-50%); }
+  #dur :global(.ln) { display: grid; grid-template-columns: 150px 1fr 60px; align-items: center; border-bottom: 1px dashed var(--line); }
+  #dur :global(.nm) { text-transform: uppercase; font-size: 12px; }
+  #dur :global(.lane) { position: relative; height: 54px; }
+  #dur :global(.lane i) { position: absolute; top: 0; bottom: 0; width: 1px; background: var(--line); }
+  #dur :global(.lane svg) { position: absolute; inset: 0; width: 100%; height: 100%; }
+  #dur :global(.tt) { text-align: right; font-size: 12px; }
+  #dur :global(.na) { color: var(--mute); font-size: 12px; }
+  .mix :global(.mx) { border: 2px solid var(--r); padding: 22px; display: flex; flex-direction: column; gap: 8px; max-width: 640px; }
+  .mix :global(.mx .st) { font-size: 40px; font-weight: 900; line-height: 0.9; }
+  .mix :global(.mx b) { align-self: flex-start; background: var(--r); color: var(--ink); padding: 2px 8px; font-size: 11px; letter-spacing: 0.12em; text-transform: uppercase; }
+  .mix :global(.mx p) { margin: 0; color: var(--mute); }
+  @media (max-width: 560px) { #dur :global(.ln) { grid-template-columns: 80px 1fr 44px; } #dur :global(.ax) { margin-left: 80px; margin-right: 44px; } }
+</style>

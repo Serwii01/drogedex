@@ -1,0 +1,84 @@
+---
+import { u } from '../../../themes/nave/base';
+import Layout from '../../../themes/nave/layouts/Layout.astro';
+import { families } from '../../../data/families';
+import { substances } from '../../../data';
+import { paper } from '../../../themes/nave/lib/tone';
+
+const A = { x: 400, y: 40 }, B = { x: 60, y: 620 }, C = { x: 740, y: 620 };
+const place = (w: { stim: number; dep: number; hal: number }) => {
+  const s = w.stim + w.dep + w.hal;
+  return { x: (A.x * w.hal + B.x * w.stim + C.x * w.dep) / s, y: (A.y * w.hal + B.y * w.stim + C.y * w.dep) / s };
+};
+---
+<Layout title="Familias" description="Las nueve familias de sustancias psicoactivas.">
+  <section class="wrap top">
+    <p class="lbl">Sala 02 · taxonomía</p>
+    <h1>Familias</h1>
+  </section>
+
+  <section class="wrap">
+    <ol class="list">
+      {families.map((f, i) => (
+        <li style={`--c:${paper[f.id]}`}>
+          <a href={u(`/familias/${f.id}`)}>
+            <span class="code st">{f.code}</span>
+            <span class="nm st">{f.name}</span>
+            <span class="tg">{f.tagline}</span>
+            <span class="tgt lbl">{f.targetLabel}</span>
+            <span class="n lbl">{substances.filter((s) => s.family === f.id).length}</span>
+          </a>
+        </li>
+      ))}
+    </ol>
+  </section>
+
+  <section class="block">
+    <div class="wrap two">
+      <div>
+        <p class="lbl">Esquema</p>
+        <h2>Triángulo de efectos</h2>
+        <p class="mute">Clasificación clásica por efecto predominante sobre el sistema nervioso central. La posición de cada familia indica la mezcla de efectos estimulantes, depresores y alucinógenos.</p>
+      </div>
+      <svg viewBox="0 0 800 680" role="img" aria-label="Triángulo estimulante, depresor, alucinógeno">
+        <polygon points={`${A.x},${A.y} ${B.x},${B.y} ${C.x},${C.y}`} class="tri" />
+        {[0.33, 0.66].map((t) => <polygon points={[A, B, C].map((p) => `${400 + (p.x - 400) * t},${427 + (p.y - 427) * t}`).join(' ')} class="tri2" />)}
+        <text x={A.x} y={A.y - 12} text-anchor="middle" class="ax">ALUCINÓGENO</text>
+        <text x={B.x} y={B.y + 40} class="ax">ESTIMULANTE</text>
+        <text x={C.x} y={C.y + 40} text-anchor="end" class="ax">DEPRESOR</text>
+        {families.map((f) => {
+          const p = place(f.wheel);
+          return (
+            <a href={u(`/familias/${f.id}`)}>
+              <g class="nd">
+                <rect x={p.x - 30} y={p.y - 18} width="60" height="36" fill={paper[f.id]} />
+                <text x={p.x} y={p.y + 7} text-anchor="middle" class="cd">{f.code}</text>
+              </g>
+            </a>
+          );
+        })}
+      </svg>
+    </div>
+  </section>
+</Layout>
+
+<style>
+  .top { padding-top: 56px; padding-bottom: 32px; }
+  h1 { margin: 10px 0 0; }
+  .list { list-style: none; padding: 0; margin: 0 0 80px; border-top: 1px solid var(--line); }
+  .list a { display: grid; grid-template-columns: 80px 1.2fr 1.4fr 1fr 40px; gap: 20px; align-items: center; padding: 16px 0; border-bottom: 1px solid var(--line); }
+  .code { font-size: 26px; font-weight: 900; background: var(--c); color: var(--ink); text-align: center; padding: 6px 0; }
+  .nm { font-size: clamp(32px, 4vw, 52px); font-weight: 900; }
+  .tg { color: var(--mute); font-size: 13px; }
+  .n { text-align: right; }
+  .list a:hover .nm { color: var(--hazard); }
+  @media (max-width: 860px) { .list a { grid-template-columns: 64px 1fr; gap: 6px 16px; } .tg, .tgt, .n { grid-column: 2; text-align: left; } }
+  .two { display: grid; grid-template-columns: 0.8fr 1.2fr; gap: 48px; align-items: center; }
+  @media (max-width: 860px) { .two { grid-template-columns: 1fr; } }
+  h2 { margin: 12px 0 16px; }
+  .tri { fill: none; stroke: var(--paper); stroke-width: 2; }
+  .tri2 { fill: none; stroke: var(--line-2); stroke-dasharray: 4 6; }
+  .ax { font-family: var(--stencil); font-weight: 900; font-size: 26px; fill: var(--paper); letter-spacing: 1px; }
+  .cd { font-family: var(--stencil); font-weight: 900; font-size: 22px; fill: var(--ink); }
+  .nd:hover rect { fill: var(--hazard); }
+</style>

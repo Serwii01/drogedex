@@ -1,0 +1,79 @@
+---
+import { u } from '../base';
+/** Curva temporal de efectos. Varias filas → escala logarítmica. */
+import type { Duration } from '../../../data/types';
+
+interface Row { name: string; d: Duration; href?: string; hot?: boolean }
+interface Props { rows: Row[]; log?: boolean; legend?: boolean }
+const { rows, log = false, legend = rows.length === 1 } = Astro.props;
+
+const MIN = 1 / 60;
+const maxH = log ? 36 : Math.max(...rows.map((r) => r.d.total));
+const pos = (h: number) => {
+  if (!log) return (h / maxH) * 100;
+  const v = Math.max(h, MIN);
+  return ((Math.log10(v) - Math.log10(MIN)) / (Math.log10(maxH) - Math.log10(MIN))) * 100;
+};
+const fmtH = (h: number) => (h < MIN ? `${Math.round(h * 3600)} s` : h < 1 ? `${Math.round(h * 60)} min` : `${Math.round(h * 10) / 10} h`);
+type Tick = [number, string];
+const logTicks: Tick[] = [[MIN, '1 min'], [0.25, '15 min'], [1, '1 h'], [3, '3 h'], [8, '8 h'], [24, '24 h']];
+const linTicks: Tick[] = [0, 1, 2, 3, 4, 5].map((i) => {
+  const h = (maxH / 5) * i;
+  const t: Tick = [h, fmtH(h)];
+  return t;
+});
+const ticks = log ? logTicks : linTicks;
+const multi = rows.length > 1;
+---
+<div class:list={['tl', { multi }]}>
+  <div class="axis">{ticks.map(([h, l]) => <span style={`left:${pos(h)}%`}>{l}</span>)}</div>
+  {rows.map((r) => {
+    const a = pos(r.d.onset), b = pos(r.d.peak[0]), c = pos(r.d.peak[1]), e = pos(r.d.total);
+    const Tag = r.href ? 'a' : 'div';
+    return (
+      <Tag href={u(r.href)} class:list={['ln', { hot: r.hot }]}>
+        {multi && <span class="nm">{r.name}</span>}
+        <span class="lane">
+          {ticks.map(([h]) => <i style={`left:${pos(h)}%`} />)}
+          <svg viewBox="0 0 100 10" preserveAspectRatio="none" aria-hidden="true">
+            <path d={`M${a} 10 L${b} 1 L${c} 1 L${e} 10 Z`} />
+          </svg>
+        </span>
+      </Tag>
+    );
+  })}
+  {legend && rows.length === 1 && (
+    <dl class="lg">
+      <div><dt class="lbl">Inicio</dt><dd>{fmtH(rows[0].d.onset)}</dd></div>
+      <div><dt class="lbl">Pico</dt><dd>{fmtH(rows[0].d.peak[0])}–{fmtH(rows[0].d.peak[1])}</dd></div>
+      <div><dt class="lbl">Total</dt><dd>{fmtH(rows[0].d.total)}</dd></div>
+      <div><dt class="lbl">Vía</dt><dd>{rows[0].d.route}</dd></div>
+    </dl>
+  )}
+</div>
+
+<style>
+  .axis { position: relative; height: 20px; font-size: 10px; color: var(--mute); }
+  .multi .axis { margin-left: 150px; }
+  .axis span { position: absolute; transform: translateX(-50%); white-space: nowrap; }
+  .axis span:first-child { transform: none; }
+  .ln { display: grid; grid-template-columns: 1fr; align-items: center; }
+  .multi .ln { grid-template-columns: 150px 1fr; border-bottom: 1px dashed var(--line); }
+  .nm { font-size: 11px; text-transform: uppercase; letter-spacing: 0.05em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; padding-right: 10px; }
+  .lane { position: relative; height: 90px; }
+  .multi .lane { height: 22px; }
+  .lane i { position: absolute; top: 0; bottom: 0; width: 1px; background: var(--line); }
+  .lane svg { position: absolute; inset: 0; width: 100%; height: 100%; }
+  path { fill: var(--paper); opacity: 0.9; }
+  .multi path { opacity: 0.55; }
+  .hot path, a.ln:hover path { fill: var(--hazard); opacity: 1; }
+  a.ln:hover .nm, .hot .nm { color: var(--hazard); }
+  .lg { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin: 18px 0 0; }
+  .lg dd { margin: 2px 0 0; }
+  @media (max-width: 640px) {
+    .lg { grid-template-columns: 1fr 1fr; }
+    .multi .axis { margin-left: 96px; }
+    .multi .ln { grid-template-columns: 96px 1fr; }
+    .axis span:nth-child(even) { display: none; }
+  }
+</style>

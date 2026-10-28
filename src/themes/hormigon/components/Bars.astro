@@ -1,0 +1,33 @@
+---
+import { u } from '../base';
+/** Barras horizontales sobrias: trazo de rotulador sobre línea de puntos. */
+interface Row { name: string; v: number; href?: string; note?: string; hot?: boolean }
+interface Props { rows: Row[]; unit?: string; max?: number; decimals?: number }
+const { rows, unit = '', max, decimals = 0 } = Astro.props;
+const top = max ?? Math.max(...rows.map((r) => r.v));
+const fmt = (v: number) => v.toLocaleString('es-ES', { maximumFractionDigits: decimals, minimumFractionDigits: decimals });
+---
+<div class="bars">
+  {rows.map((r) => {
+    const Tag = r.href ? 'a' : 'div';
+    return (
+      <Tag href={u(r.href)} class:list={['row', { hot: r.hot }]} style={`--w:${(r.v / top) * 100}%`}>
+        <span class="n">{r.name}{r.note && <em> · {r.note}</em>}</span>
+        <span class="tr"><span class="f"></span></span>
+        <span class="v">{fmt(r.v)}{unit}</span>
+      </Tag>
+    );
+  })}
+</div>
+
+<style>
+  .row { display: grid; grid-template-columns: minmax(120px, 230px) 1fr 80px; gap: 16px; align-items: center; padding: 6px 0; font-size: 12px; }
+  .n { text-transform: uppercase; letter-spacing: 0.05em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .n em { font-style: normal; color: var(--mute); text-transform: none; letter-spacing: 0; }
+  .tr { height: 12px; position: relative; background: radial-gradient(circle, var(--line-2) 1px, transparent 1.5px) 0 50% / 8px 8px repeat-x; }
+  .f { position: absolute; inset: 0 auto 0 0; width: var(--w); background: var(--paper); }
+  .hot .f, a.row:hover .f { background: var(--hazard); }
+  a.row:hover .n { color: var(--hazard); }
+  .v { text-align: right; font-variant-numeric: tabular-nums; }
+  @media (max-width: 560px) { .row { grid-template-columns: 1fr 64px; gap: 2px 10px; } .tr { grid-column: 1 / -1; grid-row: 2; } }
+</style>

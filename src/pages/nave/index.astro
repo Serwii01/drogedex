@@ -1,0 +1,132 @@
+---
+import { u } from '../../themes/nave/base';
+import Layout from '../../themes/nave/layouts/Layout.astro';
+import Ticket from '../../themes/nave/components/Ticket.astro';
+import { substances } from '../../data';
+import { families } from '../../data/families';
+import { comboKeys } from '../../themes/nave/data/interactions';
+import { myths } from '../../data/extra';
+import { rooms } from '../../data/rooms';
+import { paper } from '../../themes/nave/lib/tone';
+
+const combos = (comboKeys.length * (comboKeys.length - 1)) / 2;
+const feature = rooms.filter((r) => ['/mezclas', '/psicologia', '/mapa', '/comparar', '/galeria'].includes(r.href));
+---
+<Layout>
+  <section class="hero">
+    <div class="wrap hero-in">
+      <div>
+        <p class="lbl">Enciclopedia de sustancias psicoactivas · reducción de riesgos</p>
+        <h1 class="mega">Droge<br />dex</h1>
+      </div>
+      <aside class="flyer xerox tape">
+        <p class="lbl">Esta noche en la nave</p>
+        <ul>
+          <li><b class="st">{substances.length}</b> sustancias</li>
+          <li><b class="st">{families.length}</b> familias</li>
+          <li><b class="st">{combos}</b> combinaciones</li>
+          <li><b class="st">∞</b> preguntas</li>
+        </ul>
+        <p class="small">Entrada libre. Sin moralina. Información contrastada para decidir con criterio.</p>
+        <span class="stamp s1">Analiza</span>
+        <span class="stamp s2">No mezcles</span>
+      </aside>
+    </div>
+  </section>
+
+  <section class="block">
+    <div class="wrap">
+      <div class="head">
+        <span class="lbl">Guardarropa</span>
+        <div>
+          <h2>Coge tu ticket</h2>
+          <p>Cada sustancia, un número. La pestaña de color indica la familia.</p>
+        </div>
+      </div>
+      <div class="tickets">{substances.map((s) => <Ticket s={s} />)}</div>
+      <div class="fams">
+        {families.map((f) => <a href={u(`/familias/${f.id}`)} style={`--c:${paper[f.id]}`}><i></i>{f.code} {f.name}</a>)}
+      </div>
+    </div>
+  </section>
+
+  <section class="block">
+    <div class="wrap">
+      <div class="head">
+        <span class="lbl">Salas nuevas</span>
+        <div><h2>Herramientas</h2></div>
+      </div>
+      <div class="rooms">
+        {feature.map((r, i) => (
+          <a href={u(r.href)} class="room">
+            <span class="lbl">Sala {String(rooms.indexOf(r) + 1).padStart(2, '0')}</span>
+            <span class="st t">{r.label}</span>
+            <span class="mute">{r.sub}</span>
+            <span class="arrow">→</span>
+          </a>
+        ))}
+      </div>
+    </div>
+  </section>
+
+  <section class="block">
+    <div class="wrap">
+      <div class="head">
+        <span class="lbl">Escrito en el baño</span>
+        <div><h2>Mitos</h2><p>Pulsa cada papel para darle la vuelta.</p></div>
+      </div>
+      <div class="myths">
+        {myths.map((m, i) => (
+          <button type="button" class="myth" style={`--r:${(i % 3) - 1}deg`} aria-pressed="false">
+            <span class="face front xerox"><span class="lbl">Mito {String(i + 1).padStart(2, '0')}</span><span class="st q">«{m.m}»</span><span class="lbl flip">Girar ↻</span></span>
+            <span class="face back"><span class="lbl hz">Realidad</span><span>{m.r}</span></span>
+          </button>
+        ))}
+      </div>
+    </div>
+  </section>
+</Layout>
+
+<script>
+  document.querySelectorAll<HTMLButtonElement>('.myth').forEach((b) =>
+    b.addEventListener('click', () => b.setAttribute('aria-pressed', String(b.getAttribute('aria-pressed') !== 'true'))),
+  );
+</script>
+
+<style>
+  .hero { padding: clamp(40px, 7vw, 96px) 0 clamp(56px, 8vw, 110px); }
+  .hero-in { display: grid; grid-template-columns: 1fr 340px; gap: 40px; align-items: end; }
+  .mega { font-size: clamp(96px, 21vw, 300px); font-weight: 900; line-height: 0.84; margin-top: 18px; letter-spacing: -0.01em; }
+  .flyer { padding: 28px 24px 30px; transform: rotate(2.4deg); }
+  .flyer ul { list-style: none; padding: 0; margin: 14px 0; }
+  .flyer li { display: flex; align-items: baseline; gap: 12px; border-bottom: 1px solid rgba(20, 20, 18, 0.3); padding: 4px 0; text-transform: uppercase; font-size: 12px; letter-spacing: 0.1em; }
+  .flyer b { font-size: 44px; font-weight: 900; min-width: 76px; }
+  .small { font-size: 12px; margin: 0; }
+  .s1 { position: absolute; top: 18px; right: 14px; }
+  .s2 { position: absolute; bottom: -18px; left: -18px; transform: rotate(6deg); background: var(--soot); }
+  @media (max-width: 860px) { .hero-in { grid-template-columns: 1fr; } .flyer { max-width: 360px; margin-left: 12px; } }
+
+  .tickets { display: grid; grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)); gap: 14px 12px; }
+  @media (max-width: 520px) { .tickets { grid-template-columns: 1fr 1fr; gap: 10px 8px; } }
+  .fams { display: flex; flex-wrap: wrap; gap: 8px 22px; margin-top: 28px; font-size: 11px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--mute); }
+  .fams a { display: flex; gap: 8px; align-items: center; }
+  .fams a:hover { color: var(--paper); }
+  .fams i { width: 14px; height: 10px; background: var(--c); }
+
+  .rooms { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 1px; background: var(--line); border: 1px solid var(--line); }
+  .room { background: var(--soot); padding: 22px; display: flex; flex-direction: column; gap: 6px; min-height: 200px; position: relative; }
+  .room .t { font-size: 52px; font-weight: 900; margin-top: auto; }
+  .room .arrow { position: absolute; top: 18px; right: 20px; font-size: 20px; }
+  .room:hover { background: var(--hazard); color: var(--ink); }
+  .room:hover .lbl, .room:hover .mute { color: var(--ink); }
+
+  .myths { display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 22px; }
+  .myth { all: unset; cursor: pointer; display: grid; min-height: 230px; transform: rotate(var(--r)); perspective: 900px; }
+  .myth:focus-visible { outline: 2px solid var(--hazard); outline-offset: 4px; }
+  .face { grid-area: 1 / 1; display: flex; flex-direction: column; gap: 12px; padding: 20px; backface-visibility: hidden; transition: transform 0.5s; font-size: 13px; line-height: 1.55; }
+  .front .q { font-size: 30px; font-weight: 800; line-height: 0.95; }
+  .front .flip { margin-top: auto; }
+  .back { background: var(--concrete-2); border: 1px solid var(--line-2); transform: rotateY(180deg); color: var(--paper); }
+  .myth[aria-pressed='true'] .front { transform: rotateY(180deg); }
+  .myth[aria-pressed='true'] .back { transform: rotateY(360deg); }
+</style>

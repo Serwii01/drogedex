@@ -1,0 +1,48 @@
+---
+import { u } from '../../themes/nave/base';
+import Layout from '../../themes/nave/layouts/Layout.astro';
+import { glossary } from '../../data/extra';
+import { bySlug } from '../../data';
+
+const sorted = [...glossary].sort((a, b) => a.t.localeCompare(b.t, 'es'));
+const letters = [...new Set(sorted.map((g) => g.t[0].toUpperCase()))];
+---
+<Layout title="Glosario" description="Términos clave sobre drogas, adicción y reducción de riesgos.">
+  <section class="wrap top">
+    <p class="lbl">Sala 10 · {glossary.length} términos</p>
+    <h1>Glosario</h1>
+    <nav class="az">{letters.map((l) => <a href={u(`#l-${l}`)} class="st">{l}</a>)}</nav>
+  </section>
+  <section class="wrap">
+    <dl class="gl">
+      {sorted.map((g, i) => {
+        const first = i === 0 || sorted[i - 1].t[0].toUpperCase() !== g.t[0].toUpperCase();
+        return (
+          <div id={first ? `l-${g.t[0].toUpperCase()}` : undefined}>
+            <dt class="st">{g.t}</dt>
+            <dd>
+              {g.d}
+              {g.see && <span class="see">{g.see.map((s) => <a href={u(`/sustancias/${s}`)}>→ {bySlug[s]?.name ?? s}</a>)}</span>}
+            </dd>
+          </div>
+        );
+      })}
+    </dl>
+  </section>
+</Layout>
+
+<style>
+  .top { padding-top: 56px; padding-bottom: 32px; }
+  h1 { margin: 10px 0 24px; }
+  .az { display: flex; flex-wrap: wrap; gap: 4px; }
+  .az a { font-size: 28px; font-weight: 900; padding: 0 8px; border: 1px solid var(--line-2); }
+  .az a:hover { background: var(--hazard); color: var(--ink); border-color: var(--hazard); }
+  .gl { margin: 0 0 100px; border-top: 1px solid var(--line); }
+  .gl > div { display: grid; grid-template-columns: minmax(200px, 340px) 1fr; gap: 24px; padding: 18px 0; border-bottom: 1px dashed var(--line-2); }
+  .gl dt { font-size: 34px; font-weight: 800; }
+  .gl dd { margin: 0; color: var(--mute); max-width: 72ch; }
+  .see { display: flex; flex-wrap: wrap; gap: 4px 14px; margin-top: 8px; font-size: 12px; }
+  .see a { color: var(--paper); }
+  .see a:hover { color: var(--hazard); }
+  @media (max-width: 700px) { .gl > div { grid-template-columns: 1fr; gap: 4px; } }
+</style>

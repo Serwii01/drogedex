@@ -1,0 +1,19 @@
+---
+import { u } from '../base';
+/** Estructura 2D de PubChem (dominio público), invertida: trazo claro sobre negro. */
+interface Props { name: string; query: string }
+const { name, query } = Astro.props;
+const src = `https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/name/${encodeURIComponent(query)}/PNG?image_size=640x640`;
+---
+<figure class="st-fig">
+  <div class="crop"><img src={src} alt={`Estructura química de ${name}`} width="640" height="640" loading="lazy" decoding="async" onerror="this.closest('figure').classList.add('fail')" /></div>
+  <figcaption><span class="lbl">{query}</span><a class="lbl" href={u(`https://pubchem.ncbi.nlm.nih.gov/#query=${encodeURIComponent(query)}`)} target="_blank" rel="noopener">PubChem ↗</a></figcaption>
+</figure>
+
+<style>
+  .st-fig { margin: 0; }
+  .crop { overflow: hidden; aspect-ratio: 1; background: #000; border: 1px solid var(--line); }
+  img { width: 100%; height: 100%; object-fit: cover; transform: scale(1.12); filter: grayscale(1) invert(1) brightness(0.95) contrast(1.6); mix-blend-mode: screen; }
+  figcaption { display: flex; justify-content: space-between; padding-top: 10px; }
+  .st-fig:global(.fail) img { visibility: hidden; }
+</style>

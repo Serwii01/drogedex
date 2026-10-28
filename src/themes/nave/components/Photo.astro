@@ -1,0 +1,42 @@
+---
+import { u } from '../base';
+/** Fotografía real (Wikimedia Commons) como copia impresa pegada con cinta, con crédito. */
+import { photos, photoAt } from '../../../data/photos';
+
+interface Props { slug: string; name: string; class?: string }
+const { slug, name, class: cls } = Astro.props;
+const p = photos[slug];
+const widths = p ? [640, 1280, 2000].filter((w, i) => i === 0 || w <= p.w) : [];
+---
+{p && (
+  <figure class:list={['photo tape', cls]}>
+    <a href={u(p.src)} target="_blank" rel="noopener" class="frame" aria-label={`Abrir la foto de ${name} a tamaño completo`}>
+      <img
+        src={photoAt(p, 1280)}
+        srcset={widths.map((w) => `${photoAt(p, w)} ${Math.min(w, p.w)}w`).join(', ')}
+        sizes="(max-width: 860px) 100vw, 60vw"
+        alt={`Fotografía de ${name}`}
+        width={p.w}
+        height={p.h}
+        loading="lazy"
+        decoding="async"
+      />
+    </a>
+    <figcaption>
+      <span>Foto: {p.author}</span>
+      <span>{p.license}</span>
+      <a href={u(p.page)} target="_blank" rel="noopener">Wikimedia Commons ↗</a>
+    </figcaption>
+  </figure>
+)}
+
+<style>
+  .photo { margin: 0; background: var(--paper); padding: 12px 12px 10px; transform: rotate(-0.8deg); box-shadow: 0 18px 40px rgba(0, 0, 0, 0.5); }
+  .frame { display: block; background: #000; overflow: hidden; }
+  img { width: 100%; height: auto; max-height: 72vh; object-fit: contain; display: block; filter: contrast(1.05) saturate(0.85); }
+  .frame:hover img { filter: none; }
+  figcaption { display: flex; flex-wrap: wrap; gap: 4px 16px; padding-top: 10px; font-size: 11px; color: #4b4840; letter-spacing: 0.02em; }
+  figcaption a { color: var(--ink); text-decoration: underline; text-underline-offset: 2px; }
+  figcaption a:hover { color: #c3360a; }
+  @media print { .photo { box-shadow: none; transform: none; } }
+</style>

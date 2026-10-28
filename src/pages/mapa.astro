@@ -1,0 +1,37 @@
+---
+import Layout from '../layouts/Layout.astro';
+import WorldDots from '../components/WorldDots.astro';
+import { routes } from '../data/extra';
+import { countries } from '../data';
+---
+<Layout title="Mapa" description="Mapa mundial de precios estimados y rutas del tráfico de drogas.">
+  <section class="wrap head">
+    <span class="label">Geografía / precios y rutas</span>
+    <h1>Ma<span class="acid">pa</span></h1>
+    <p class="lede">Precios estimados por país y principales rutas desde las zonas de producción hasta los mercados de consumo. Cuanto más lejos del origen, más sube el precio: cada frontera y cada intermediario añaden riesgo y margen.</p>
+  </section>
+
+  <section class="section">
+    <div class="wrap"><WorldDots /></div>
+  </section>
+
+  <section class="section">
+    <div class="wrap">
+      <div class="section-head"><span class="idx">01 / RUTAS</span><div><h2>Origen → destino</h2></div></div>
+      <table class="data">
+        <tbody>
+          {routes.map((r) => <tr><th>{r.name}</th><td><b class="acid">{r.from.map((c) => countries[c]).join(', ')}</b> → {r.to.map((c) => countries[c]).join(', ')}</td></tr>)}
+        </tbody>
+      </table>
+      <p class="small">Simplificación divulgativa basada en el World Drug Report (UNODC) y el European Drug Report (EUDA). Las rutas reales son múltiples y cambiantes (p. ej., África occidental como zona de tránsito de la cocaína hacia Europa).</p>
+    </div>
+  </section>
+</Layout>
+
+<style>
+  .head { padding-top: 56px; padding-bottom: 32px; }
+  h1 { font-size: clamp(56px, 11vw, 160px); margin: 12px 0 24px; }
+  .lede { max-width: 72ch; color: var(--mute); }
+  .small { font-size: 12px; margin-top: 18px; max-width: 80ch; color: var(--mute); }
+  b { font-weight: 500; }
+</style>

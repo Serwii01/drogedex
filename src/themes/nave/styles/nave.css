@@ -1,0 +1,187 @@
+/* ───── DROGEDEX / NAVE ─────
+   hormigón, fotocopia, cinta, sellos. Un solo acento: naranja de seguridad. */
+
+:root {
+  --soot: #0c0c0b;
+  --concrete: #161614;
+  --concrete-2: #1d1d1a;
+  --line: #2b2a26;
+  --line-2: #3d3b35;
+  --paper: #e8e4d8;
+  --paper-2: #d9d4c4;
+  --ink: #141412;
+  --mute: #8c887d;
+  --dim: #5b5850;
+  --hazard: #ff5a1f;
+  --stencil: 'Big Shoulders Stencil Display', 'Impact', sans-serif;
+  --mono: 'IBM Plex Mono', ui-monospace, Menlo, monospace;
+  --gutter: clamp(16px, 4vw, 56px);
+  --max: 1320px;
+  --grain: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='220' height='220'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='2' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  0 0 0 1.1 -0.35'/></filter><rect width='100%' height='100%' filter='url(%23n)'/></svg>");
+  color-scheme: dark;
+}
+
+* { box-sizing: border-box; }
+html { background: var(--soot); scroll-padding-top: 80px; }
+body {
+  margin: 0;
+  color: var(--paper);
+  font-family: var(--mono);
+  font-size: 14px;
+  line-height: 1.65;
+  background:
+    radial-gradient(ellipse 60% 40% at 15% 10%, rgba(255, 255, 255, 0.025), transparent 70%),
+    radial-gradient(ellipse 50% 50% at 85% 60%, rgba(120, 110, 90, 0.05), transparent 70%),
+    var(--soot);
+  -webkit-font-smoothing: antialiased;
+  overflow-x: hidden;
+}
+/* grano de hormigón */
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 90;
+  background-image: var(--grain);
+  opacity: 0.35;
+  mix-blend-mode: overlay;
+}
+
+a { color: inherit; text-decoration: none; }
+img, svg { max-width: 100%; display: block; }
+::selection { background: var(--hazard); color: var(--ink); }
+
+.wrap { max-width: var(--max); margin: 0 auto; padding: 0 var(--gutter); }
+
+h1, h2, h3, .st {
+  font-family: var(--stencil);
+  font-weight: 800;
+  text-transform: uppercase;
+  line-height: 0.86;
+  letter-spacing: 0.005em;
+  margin: 0;
+}
+h1 { font-size: clamp(64px, 12vw, 180px); }
+h2 { font-size: clamp(36px, 5vw, 72px); }
+h3 { font-size: 22px; line-height: 1; }
+
+.lbl {
+  font-size: 11px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--mute);
+}
+.hz { color: var(--hazard); }
+.mute { color: var(--mute); }
+
+/* bloque de sección: mucho aire, una línea */
+.block { padding: clamp(56px, 9vw, 128px) 0; border-top: 1px solid var(--line); }
+.head { display: grid; grid-template-columns: 160px 1fr; gap: 24px; margin-bottom: 44px; align-items: start; }
+.head .lbl { padding-top: 10px; }
+.head p { color: var(--mute); max-width: 60ch; margin: 18px 0 0; }
+@media (max-width: 760px) { .head { grid-template-columns: 1fr; gap: 6px; } }
+
+/* ───── papel fotocopiado ───── */
+.xerox {
+  position: relative;
+  background: var(--paper);
+  color: var(--ink);
+  isolation: isolate;
+}
+.xerox::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background-image: var(--grain);
+  opacity: 0.32;
+  mix-blend-mode: multiply;
+  pointer-events: none;
+  z-index: 1;
+}
+.xerox > * { position: relative; z-index: 2; }
+.xerox .lbl, .xerox .mute { color: #5d594f; }
+
+/* cinta adhesiva */
+.tape { position: relative; }
+.tape::before {
+  content: '';
+  position: absolute;
+  top: -12px;
+  left: 50%;
+  width: 96px;
+  height: 24px;
+  transform: translateX(-50%) rotate(-3deg);
+  background: rgba(222, 214, 188, 0.62);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.35);
+  z-index: 5;
+  clip-path: polygon(2% 0, 98% 4%, 100% 50%, 97% 100%, 3% 96%, 0 50%);
+}
+
+/* sello de goma */
+.stamp {
+  display: inline-block;
+  padding: 4px 12px;
+  border: 3px solid currentColor;
+  color: var(--hazard);
+  font-family: var(--stencil);
+  font-weight: 800;
+  font-size: 18px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  transform: rotate(-7deg);
+  opacity: 0.88;
+  filter: url(#rough);
+}
+
+/* botones: etiqueta de señalética */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 18px;
+  border: 1px solid var(--paper);
+  background: transparent;
+  color: var(--paper);
+  font-family: var(--mono);
+  font-size: 12px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  cursor: pointer;
+}
+.btn:hover { background: var(--hazard); border-color: var(--hazard); color: var(--ink); animation: strobe 0.18s steps(2) 2; }
+.btn.fill { background: var(--paper); color: var(--ink); }
+.btn.fill:hover { background: var(--hazard); }
+
+.chip { display: inline-block; padding: 1px 8px; border: 1px solid var(--line-2); font-size: 11px; color: var(--mute); }
+
+ul.dash { list-style: none; margin: 0; padding: 0; }
+ul.dash li { padding: 8px 0 8px 22px; border-bottom: 1px dashed var(--line-2); position: relative; }
+ul.dash li::before { content: '/'; position: absolute; left: 4px; color: var(--hazard); }
+.xerox ul.dash li { border-color: rgba(20, 20, 18, 0.25); }
+
+table.data { width: 100%; border-collapse: collapse; font-size: 13px; }
+table.data th, table.data td { text-align: left; padding: 10px 0; border-bottom: 1px dashed var(--line-2); vertical-align: top; }
+table.data th { font-weight: 400; color: var(--mute); font-size: 11px; letter-spacing: 0.14em; text-transform: uppercase; width: 150px; padding-right: 16px; }
+
+@keyframes strobe { 50% { filter: invert(1); } }
+@keyframes flicker {
+  0%, 18%, 22%, 25%, 53%, 57%, 100% { opacity: 1; }
+  20%, 24%, 55% { opacity: 0.25; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation: none !important; transition: none !important; }
+}
+
+/* ───── impresión: ficha limpia en blanco ───── */
+@media print {
+  :root { --paper: #111; --mute: #555; --line: #ccc; --line-2: #ccc; --soot: #fff; }
+  html, body { background: #fff !important; color: #111 !important; font-size: 11px; }
+  body::before, .noprint, header.top, footer.foot { display: none !important; }
+  .block { padding: 20px 0; break-inside: avoid; }
+  .xerox { background: #fff; }
+  .xerox::after { display: none; }
+  a { text-decoration: none; }
+  svg { max-height: 280px; }
+}

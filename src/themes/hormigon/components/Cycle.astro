@@ -1,0 +1,53 @@
+---
+/** Diagrama de ciclo: nodos en círculo unidos por flechas. */
+interface Node { n: string; sub?: string }
+interface Props { nodes: Node[]; center?: string; hot?: number }
+const { nodes, center, hot } = Astro.props;
+const W = 760, C = W / 2, R = 250;
+const N = nodes.length;
+const pos = nodes.map((_, i) => {
+  const a = (i / N) * Math.PI * 2 - Math.PI / 2;
+  return { x: C + Math.cos(a) * R, y: C + Math.sin(a) * R, a };
+});
+const arcs = pos.map((p, i) => {
+  const a1 = p.a + 0.32, a2 = pos[(i + 1) % N].a - 0.32 + (i === N - 1 ? Math.PI * 2 : 0);
+  const rr = R - 2;
+  const x1 = C + Math.cos(a1) * rr, y1 = C + Math.sin(a1) * rr;
+  const x2 = C + Math.cos(a2) * rr, y2 = C + Math.sin(a2) * rr;
+  return `M${x1.toFixed(1)} ${y1.toFixed(1)} A${rr} ${rr} 0 0 1 ${x2.toFixed(1)} ${y2.toFixed(1)}`;
+});
+const id = `cy${N}${nodes[0].n.length}`;
+---
+<figure class="cy">
+  <svg viewBox={`0 0 ${W} ${W}`} role="img" aria-label={`Ciclo: ${nodes.map((n) => n.n).join(' → ')}`}>
+    <defs>
+      <marker id={id} viewBox="0 0 10 10" refX="8" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
+        <path d="M0 0 L10 5 L0 10 z" class="ah" />
+      </marker>
+    </defs>
+    {arcs.map((d) => <path d={d} class="arc" marker-end={`url(#${id})`} />)}
+    {center && <text x={C} y={C + 8} text-anchor="middle" class="ctr">{center}</text>}
+    {pos.map((p, i) => (
+      <g class:list={['nd', { hot: hot === i }]}>
+        <circle cx={p.x} cy={p.y} r="66" />
+        <text x={p.x} y={p.y - 4} text-anchor="middle" class="nn">{String(i + 1).padStart(2, '0')}</text>
+        {nodes[i].n.split(' / ').map((line, k, arr) => (
+          <text x={p.x} y={p.y + 16 + k * 15 - (arr.length - 1) * 4} text-anchor="middle" class="tt">{line.toUpperCase()}</text>
+        ))}
+      </g>
+    ))}
+  </svg>
+</figure>
+
+<style>
+  .cy { margin: 0; }
+  svg { width: 100%; max-width: 620px; margin: 0 auto; height: auto; }
+  .arc { fill: none; stroke: var(--paper); stroke-width: 2; stroke-dasharray: 8 6; }
+  .ah { fill: var(--paper); }
+  .nd circle { fill: var(--soot); stroke: var(--paper); stroke-width: 2; }
+  .nd.hot circle { fill: var(--hazard); stroke: var(--hazard); }
+  .nd.hot text { fill: var(--ink); }
+  .nn { font-family: var(--mono); font-size: 11px; fill: var(--mute); }
+  .tt { font-family: var(--stencil); font-weight: 300; font-size: 15px; fill: var(--paper); letter-spacing: 0.5px; }
+  .ctr { font-family: var(--stencil); font-weight: 300; font-size: 40px; fill: var(--line-2); letter-spacing: 1px; }
+</style>

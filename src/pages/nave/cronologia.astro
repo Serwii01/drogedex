@@ -1,0 +1,73 @@
+---
+import { u } from '../../themes/nave/base';
+import Layout from '../../themes/nave/layouts/Layout.astro';
+import { substances } from '../../data';
+import { milestones, parseYear } from '../../data/extra';
+import { paper } from '../../themes/nave/lib/tone';
+
+type Ev = { y: number; label: string; title: string; t: string; kind: string; href?: string; tone?: string };
+const evs: Ev[] = [
+  ...substances.map((s) => ({ y: parseYear(s.history.year), label: s.history.year, title: s.name, t: `${s.history.place}. ${s.history.text}`, kind: 'sustancia', href: `/sustancias/${s.slug}`, tone: paper[s.family] })),
+  ...milestones.map((m) => ({ y: m.y, label: m.label, title: m.kind === 'ley' ? 'Ley y política' : m.kind === 'cultura' ? 'Cultura' : 'Ciencia', t: m.t, kind: m.kind })),
+].sort((a, b) => a.y - b.y);
+const kinds = [
+  { k: 'all', l: 'Todo' }, { k: 'sustancia', l: 'Sustancias' }, { k: 'ley', l: 'Ley' }, { k: 'ciencia', l: 'Ciencia' }, { k: 'cultura', l: 'Cultura' },
+];
+---
+<Layout title="Cronología" description="Historia de las drogas: descubrimientos, leyes, ciencia y cultura.">
+  <section class="wrap top">
+    <p class="lbl">Sala 08 · {evs.length} hitos</p>
+    <h1>Crono<br />logía</h1>
+    <div class="f">{kinds.map((k, i) => <button type="button" class:list={['fb', { on: i === 0 }]} data-k={k.k}>{k.l}</button>)}</div>
+  </section>
+  <section class="wrap">
+    <ol class="tl" id="tl">
+      {evs.map((e) => (
+        <li data-k={e.kind} style={e.tone ? `--t:${e.tone}` : undefined}>
+          <span class="y st">{e.label}</span>
+          <span class="dot"></span>
+          <div class="c">
+            <span class="lbl">{e.kind}</span>
+            {e.href ? <a href={u(e.href)} class="st tt">{e.title}</a> : <span class="st tt">{e.title}</span>}
+            <p>{e.t}</p>
+          </div>
+        </li>
+      ))}
+    </ol>
+  </section>
+</Layout>
+
+<script>
+  const bs = [...document.querySelectorAll<HTMLButtonElement>('.fb')];
+  const items = [...document.querySelectorAll<HTMLElement>('#tl li')];
+  bs.forEach((b) => b.addEventListener('click', () => {
+    bs.forEach((x) => x.classList.toggle('on', x === b));
+    items.forEach((li) => (li.style.display = b.dataset.k === 'all' || li.dataset.k === b.dataset.k ? '' : 'none'));
+  }));
+</script>
+
+<style>
+  .top { padding-top: 56px; padding-bottom: 40px; }
+  h1 { margin: 10px 0 26px; }
+  .f { display: flex; flex-wrap: wrap; gap: 6px; }
+  .fb { background: transparent; border: 1px solid var(--line-2); color: var(--mute); font-family: var(--mono); font-size: 11px; letter-spacing: 0.12em; text-transform: uppercase; padding: 6px 12px; cursor: pointer; }
+  .fb.on { background: var(--paper); color: var(--ink); border-color: var(--paper); }
+  .tl { list-style: none; padding: 0 0 100px; margin: 0; position: relative; }
+  .tl::before { content: ''; position: absolute; left: 170px; top: 0; bottom: 0; border-left: 2px dashed var(--line-2); }
+  .tl li { display: grid; grid-template-columns: 150px 40px 1fr; gap: 0; padding: 18px 0; align-items: start; }
+  .y { font-size: 40px; font-weight: 900; text-align: right; padding-right: 12px; line-height: 0.9; }
+  .dot { width: 14px; height: 14px; background: var(--t, var(--paper)); margin: 10px 0 0 14px; position: relative; z-index: 1; outline: 4px solid var(--soot); }
+  li[data-k='ley'] .dot { background: var(--hazard); }
+  .c { padding-left: 14px; max-width: 72ch; }
+  .tt { display: block; font-size: 30px; font-weight: 800; margin: 2px 0 6px; }
+  a.tt:hover { color: var(--hazard); }
+  .c p { margin: 0; color: var(--mute); font-size: 13px; }
+  li[data-k='ley'] .tt { color: var(--hazard); }
+  @media (max-width: 640px) {
+    .tl::before { left: 7px; }
+    .tl li { grid-template-columns: 30px 1fr; }
+    .y { grid-column: 2; text-align: left; font-size: 30px; padding: 0 0 4px 14px; }
+    .dot { grid-row: 1; grid-column: 1; margin: 8px 0 0 0; }
+    .c { grid-column: 2; }
+  }
+</style>

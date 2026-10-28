@@ -1,0 +1,100 @@
+---
+import { u } from '../../themes/hormigon/base';
+import Layout from '../../themes/hormigon/layouts/Layout.astro';
+import Ticket from '../../themes/hormigon/components/Ticket.astro';
+import { substances } from '../../data';
+import { families } from '../../data/families';
+import { comboKeys } from '../../themes/hormigon/data/interactions';
+import { myths } from '../../data/extra';
+import { rooms } from '../../data/rooms';
+import { photos, photoAt } from '../../data/photos';
+
+const combos = (comboKeys.length * (comboKeys.length - 1)) / 2;
+const hero = photos['psilocibina'];
+---
+<Layout>
+  <section class="hero">
+    <div class="bg" style={`background-image:url('${photoAt(hero, 2000)}')`} aria-hidden="true"></div>
+    <div class="wrap in">
+      <p class="lbl">Enciclopedia de sustancias psicoactivas</p>
+      <h1>Drogedex</h1>
+      <div class="rule"></div>
+      <dl class="stats">
+        <div><dt class="lbl">Sustancias</dt><dd>{substances.length}</dd></div>
+        <div><dt class="lbl">Familias</dt><dd>{families.length}</dd></div>
+        <div><dt class="lbl">Combinaciones</dt><dd>{combos}</dd></div>
+      </dl>
+      <p class="lede">Información sin juicio. Reducción de riesgos.</p>
+    </div>
+  </section>
+
+  <section class="block">
+    <div class="wrap">
+      <div class="head"><span class="lbl">Índice</span><div><h2>Sustancias</h2></div></div>
+      <div class="tickets">{substances.map((s) => <Ticket s={s} />)}</div>
+    </div>
+  </section>
+
+  <section class="block">
+    <div class="wrap">
+      <div class="head"><span class="lbl">Salas</span><div><h2>Plano</h2></div></div>
+      <ol class="rooms">
+        {rooms.map((r, i) => (
+          <li><a href={u(r.href)}><span class="lbl">{String(i + 1).padStart(2, '0')}</span><span class="t">{r.label}</span><span class="s">{r.sub}</span></a></li>
+        ))}
+      </ol>
+    </div>
+  </section>
+
+  <section class="block">
+    <div class="wrap">
+      <div class="head"><span class="lbl">Mitos</span><div><h2>Falso / cierto</h2><p>Pulsa para girar.</p></div></div>
+      <div class="myths">
+        {myths.map((m, i) => (
+          <button type="button" class="myth" aria-pressed="false">
+            <span class="face front"><span class="lbl">{String(i + 1).padStart(2, '0')} · Falso</span><span class="q">{m.m}</span></span>
+            <span class="face back"><span class="lbl hz">Cierto</span><span>{m.r}</span></span>
+          </button>
+        ))}
+      </div>
+    </div>
+  </section>
+</Layout>
+
+<script>
+  document.querySelectorAll<HTMLButtonElement>('.myth').forEach((b) =>
+    b.addEventListener('click', () => b.setAttribute('aria-pressed', String(b.getAttribute('aria-pressed') !== 'true'))),
+  );
+</script>
+
+<style>
+  .hero { position: relative; min-height: calc(100svh - 61px); display: flex; align-items: flex-end; overflow: hidden; border-bottom: 1px solid var(--line); }
+  .bg { position: absolute; inset: 0; background-size: cover; background-position: center; filter: grayscale(1) contrast(1.2) brightness(0.32); transform: scale(1.04); }
+  .bg::after { content: ''; position: absolute; inset: 0; background: linear-gradient(180deg, rgba(9, 9, 9, 0.2), var(--soot) 92%); }
+  .in { position: relative; width: 100%; padding-bottom: clamp(48px, 9vw, 120px); }
+  h1 { font-size: clamp(44px, 11vw, 168px); letter-spacing: 0.24em; margin: 22px 0 32px -0.04em; overflow-wrap: anywhere; }
+  .rule { height: 1px; background: var(--line-2); margin-bottom: 26px; }
+  .stats { display: flex; gap: clamp(28px, 6vw, 96px); margin: 0 0 26px; flex-wrap: wrap; }
+  .stats dd { margin: 4px 0 0; font-family: var(--stencil); font-weight: 200; font-size: clamp(24px, 5.7vw, 40px); letter-spacing: 0.08em; }
+  .lede { color: var(--mute); letter-spacing: 0.2em; text-transform: uppercase; font-size: 11px; margin: 0; }
+
+  .tickets { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(150px, 100%), 1fr)); gap: 1px; background: var(--line); border: 1px solid var(--line); }
+  .tickets :global(.ticket) { border: 0; }
+  @media (max-width: 520px) { .tickets { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+
+  .rooms { list-style: none; padding: 0; margin: 0; border-top: 1px solid var(--line); }
+  .rooms a { display: grid; grid-template-columns: 60px 1fr auto; gap: 16px; align-items: baseline; padding: 16px 0; border-bottom: 1px solid var(--line); }
+  .rooms .t { font-family: var(--stencil); font-weight: 300; font-size: clamp(18px, 2.4vw, 26px); letter-spacing: 0.18em; text-transform: uppercase; transition: color 0.3s, letter-spacing 0.4s; }
+  .rooms .s { font-size: 11px; color: var(--mute); }
+  .rooms a:hover .t { color: var(--hazard); letter-spacing: 0.26em; }
+  @media (max-width: 640px) { .rooms a { grid-template-columns: 40px 1fr; } .rooms .s { grid-column: 2; } }
+
+  .myths { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(260px, 100%), 1fr)); gap: 1px; background: var(--line); border: 1px solid var(--line); }
+  .myth { all: unset; cursor: pointer; display: grid; min-height: 220px; background: var(--soot); perspective: 1000px; }
+  .myth:focus-visible { outline: 1px solid var(--hazard); outline-offset: -1px; }
+  .face { grid-area: 1 / 1; display: flex; flex-direction: column; gap: 14px; padding: 24px; backface-visibility: hidden; transition: transform 0.7s; font-size: 12px; line-height: 1.7; }
+  .front .q { font-family: var(--stencil); font-weight: 300; font-size: 20px; letter-spacing: 0.06em; line-height: 1.25; text-transform: uppercase; }
+  .back { background: var(--beton), var(--concrete-2); transform: rotateY(180deg); }
+  .myth[aria-pressed='true'] .front { transform: rotateY(180deg); }
+  .myth[aria-pressed='true'] .back { transform: rotateY(360deg); }
+</style>

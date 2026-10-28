@@ -1,0 +1,176 @@
+---
+import Layout from '../layouts/Layout.astro';
+import Cycle from '../components/Cycle.astro';
+import { dsm5, severity, stages, koob, biopsicosocial, interventions } from '../data/psych';
+
+const bps = [
+  { k: 'Biológico', d: biopsicosocial.bio },
+  { k: 'Psicológico', d: biopsicosocial.psi },
+  { k: 'Social', d: biopsicosocial.soc },
+];
+---
+<Layout title="Psicología de la adicción" description="Criterios DSM-5, modelo transteórico, ciclo de la adicción y modelo biopsicosocial.">
+  <section class="wrap head">
+    <span class="label">Marco teórico / psicología clínica y de la salud</span>
+    <h1>Psico<span class="acid">logía</span></h1>
+    <p class="lede">Lo esencial para entender el consumo y la adicción desde la psicología clínica y de la salud: diagnóstico, modelos explicativos y enfoques de intervención.</p>
+  </section>
+
+  <section class="section" id="dsm">
+    <div class="wrap cols">
+      <div>
+        <span class="idx">01 / DSM-5 (APA, 2013)</span>
+        <h2 class="h">Trastorno por consumo de sustancias</h2>
+        <p class="mute">Patrón problemático que provoca malestar o deterioro clínicamente significativo, con al menos 2 de estos 11 criterios en un periodo de 12 meses. Marca los criterios para ver cómo se gradúa la gravedad.</p>
+        <p class="label red">Ejercicio didáctico. No tiene valor diagnóstico.</p>
+        <div class="meter panel" id="meter">
+          <span class="label">Criterios</span>
+          <span class="count" id="count">0</span>
+          <span class="sev" id="sev">{severity[0].label}</span>
+          <div class="scale">{Array.from({ length: 11 }, (_, i) => <i data-i={i + 1}></i>)}</div>
+          <div class="scale-l label"><span>0</span><span>2 leve</span><span>4 moderado</span><span>6+ grave</span></div>
+        </div>
+      </div>
+      <ol class="crit" id="crit">
+        {dsm5.map((c, i) => (
+          <li>
+            <label>
+              <input type="checkbox" />
+              <span class="box"></span>
+              <span class="n">{String(i + 1).padStart(2, '0')}</span>
+              <span class="t">{c.t}<em>{c.k}</em></span>
+            </label>
+          </li>
+        ))}
+      </ol>
+    </div>
+    <div class="wrap"><p class="foot-n">Tolerancia y abstinencia no se computan si aparecen solo con medicación tomada bajo supervisión médica.</p></div>
+  </section>
+
+  <section class="section">
+    <div class="wrap cols">
+      <div>
+        <span class="idx">02 / PROCHASKA Y DICLEMENTE (1982)</span>
+        <h2 class="h">Etapas del cambio</h2>
+        <p class="mute">Modelo transteórico: el cambio no es un acontecimiento sino un proceso en espiral. La recaída forma parte del ciclo. Cada etapa pide una intervención distinta.</p>
+        <dl class="stages">
+          {stages.map((s, i) => <div><dt><span>{String(i + 1).padStart(2, '0')}</span>{s.n}</dt><dd>{s.t}<br /><span class="acid">→ {s.i}</span></dd></div>)}
+        </dl>
+      </div>
+      <Cycle nodes={stages.map((s) => ({ n: s.n }))} center="CAMBIO" />
+    </div>
+  </section>
+
+  <section class="section">
+    <div class="wrap cols">
+      <Cycle nodes={[{ n: 'Atracón / intoxicación' }, { n: 'Abstinencia / afecto neg.' }, { n: 'Preocupación / anticipación' }]} center="ADICCIÓN" hot={1} />
+      <div>
+        <span class="idx">03 / KOOB Y VOLKOW (2010, 2016)</span>
+        <h2 class="h">El ciclo de la adicción</h2>
+        <p class="mute">Modelo neurobiológico en tres fases que se retroalimentan. Explica el paso del refuerzo positivo (consumir por placer) al negativo (consumir para dejar de sentirse mal).</p>
+        <ol class="koob">
+          {koob.map((k) => <li><h3>{k.n}</h3><p class="label">{k.region}</p><p>{k.t}</p></li>)}
+        </ol>
+      </div>
+    </div>
+  </section>
+
+  <section class="section">
+    <div class="wrap">
+      <div class="section-head"><span class="idx">04 / ENGEL (1977)</span><div><h2>Modelo biopsicosocial</h2><p>La adicción surge de la interacción de factores biológicos, psicológicos y sociales. Ningún factor es suficiente por sí solo.</p></div></div>
+      <div class="bps">
+        {bps.map((b) => (
+          <div class="col">
+            <h3>{b.k}</h3>
+            <p class="label red">Riesgo</p>
+            <ul class="dash">{b.d.risk.map((x) => <li>{x}</li>)}</ul>
+            <p class="label acid">Protección</p>
+            <ul class="plus">{b.d.prot.map((x) => <li>{x}</li>)}</ul>
+          </div>
+        ))}
+      </div>
+    </div>
+  </section>
+
+  <section class="section">
+    <div class="wrap">
+      <div class="section-head"><span class="idx">05 / INTERVENCIÓN</span><div><h2>Qué funciona</h2><p>Enfoques con respaldo empírico, desde la reducción de daños hasta la prevención de recaídas.</p></div></div>
+      <div class="int">
+        {interventions.map((x, i) => <div><span class="label acid">{String(i + 1).padStart(2, '0')}</span><h3>{x.n}</h3><p>{x.t}</p></div>)}
+      </div>
+    </div>
+  </section>
+</Layout>
+
+<script>
+  const boxes = [...document.querySelectorAll<HTMLInputElement>('#crit input')];
+  const count = document.getElementById('count')!;
+  const sev = document.getElementById('sev')!;
+  const meter = document.getElementById('meter')!;
+  const ticks = [...meter.querySelectorAll<HTMLElement>('.scale i')];
+  const label = (n: number) => (n >= 6 ? 'Grave' : n >= 4 ? 'Moderado' : n >= 2 ? 'Leve' : 'Sin trastorno');
+  function update() {
+    const n = boxes.filter((b) => b.checked).length;
+    count.textContent = String(n);
+    sev.textContent = label(n);
+    meter.dataset.level = label(n);
+    ticks.forEach((t, i) => t.classList.toggle('on', i < n));
+  }
+  boxes.forEach((b) => b.addEventListener('change', update));
+</script>
+
+<style>
+  .head { padding-top: 56px; padding-bottom: 32px; }
+  h1 { font-size: clamp(56px, 11vw, 160px); margin: 12px 0 24px; }
+  .lede { max-width: 72ch; color: var(--mute); }
+  .idx { display: block; font-size: 11px; color: var(--acid); letter-spacing: 0.14em; margin-bottom: 18px; }
+  .h { margin-bottom: 20px; }
+  .mute { color: var(--mute); }
+  .cols { display: grid; grid-template-columns: 1fr 1fr; gap: 56px; align-items: start; }
+  @media (max-width: 900px) { .cols { grid-template-columns: 1fr; gap: 32px; } }
+  .meter { padding: 22px; margin-top: 20px; display: grid; grid-template-columns: auto 1fr; gap: 4px 20px; align-items: end; border-top: 3px solid var(--acid); }
+  .meter > .label { grid-column: 1 / -1; }
+  .count { font-family: var(--display); font-weight: 900; font-stretch: 125%; font-size: 110px; line-height: 0.8; }
+  .sev { font-family: var(--display); font-weight: 900; font-stretch: 125%; text-transform: uppercase; font-size: 34px; color: var(--mute); }
+  .meter[data-level='Leve'] .sev { color: #ffd23f; }
+  .meter[data-level='Moderado'] .sev { color: #ff8a00; }
+  .meter[data-level='Grave'] .sev { color: var(--red); }
+  .meter[data-level='Moderado'], .meter[data-level='Grave'] { border-top-color: var(--red); }
+  .scale { grid-column: 1 / -1; display: grid; grid-template-columns: repeat(11, 1fr); gap: 3px; margin-top: 16px; }
+  .scale i { height: 14px; border: 1px solid var(--line-2); }
+  .scale i.on { background: var(--acid); border-color: var(--acid); }
+  .scale i:nth-child(n + 4).on { background: #ff8a00; border-color: #ff8a00; }
+  .scale i:nth-child(n + 6).on { background: var(--red); border-color: var(--red); }
+  .scale-l { grid-column: 1 / -1; display: flex; justify-content: space-between; }
+  .crit { list-style: none; padding: 0; margin: 0; }
+  .crit label { display: grid; grid-template-columns: 22px 30px 1fr; gap: 10px; padding: 12px 0; border-bottom: 1px solid var(--line); cursor: pointer; align-items: start; position: relative; }
+  .crit input { position: absolute; opacity: 0; pointer-events: none; }
+  .box { width: 18px; height: 18px; border: 1px solid var(--fg); margin-top: 2px; }
+  .crit input:checked + .box { background: var(--acid); border-color: var(--acid); }
+  .crit input:focus-visible + .box { outline: 2px solid var(--acid); outline-offset: 2px; }
+  .crit .n { color: var(--acid); font-size: 11px; padding-top: 3px; }
+  .crit em { display: block; font-style: normal; font-size: 10px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--mute); margin-top: 2px; }
+  .crit input:checked ~ .t { color: var(--acid); }
+  .foot-n { margin-top: 24px; color: var(--mute); font-size: 12px; }
+  .stages { margin: 20px 0 0; }
+  .stages div { padding: 12px 0; border-bottom: 1px solid var(--line); }
+  .stages dt { font-family: var(--display); font-weight: 900; font-stretch: 112%; font-size: 18px; text-transform: uppercase; display: flex; gap: 12px; align-items: baseline; }
+  .stages dt span { font-family: var(--mono); font-size: 11px; color: var(--acid); font-weight: 400; }
+  .stages dd { margin: 4px 0 0; font-size: 13px; color: var(--mute); }
+  .koob { list-style: none; padding: 0; margin: 20px 0 0; }
+  .koob li { padding: 14px 0; border-bottom: 1px solid var(--line); }
+  .koob li:nth-child(2) h3 { color: var(--acid); }
+  .koob p { margin: 6px 0 0; font-size: 13px; }
+  .bps { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
+  .bps .col { border: 1px solid var(--line); background: var(--bg-2); padding: 22px; }
+  .bps h3 { font-size: 24px; margin-bottom: 8px; }
+  .bps .label { margin: 18px 0 6px; }
+  .plus { list-style: none; padding: 0; margin: 0; }
+  .plus li { padding: 7px 0 7px 22px; border-bottom: 1px solid var(--line); position: relative; }
+  .plus li::before { content: '+'; position: absolute; left: 4px; color: var(--acid); }
+  @media (max-width: 860px) { .bps { grid-template-columns: 1fr; } }
+  .int { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 12px; }
+  .int > div { border: 1px solid var(--line); background: var(--bg-2); padding: 20px; }
+  .int h3 { margin: 10px 0 8px; font-size: 18px; }
+  .int p { margin: 0; font-size: 13px; color: var(--mute); }
+</style>

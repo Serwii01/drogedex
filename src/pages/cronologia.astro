@@ -1,0 +1,76 @@
+---
+import Layout from '../layouts/Layout.astro';
+import { substances } from '../data';
+import { familyById } from '../data/families';
+import { milestones, parseYear } from '../data/extra';
+
+type Ev = { y: number; label: string; title: string; t: string; kind: string; href?: string; color?: string };
+const evs: Ev[] = [
+  ...substances.map((s) => ({ y: parseYear(s.history.year), label: s.history.year, title: s.name, t: `${s.history.place}. ${s.history.text}`, kind: 'sustancia', href: `/sustancias/${s.slug}`, color: familyById[s.family].color })),
+  ...milestones.map((m) => ({ y: m.y, label: m.label, title: m.kind === 'ley' ? 'Ley y política' : m.kind === 'cultura' ? 'Cultura' : 'Ciencia', t: m.t, kind: m.kind })),
+].sort((a, b) => a.y - b.y);
+const kinds = [
+  { k: 'all', l: 'Todo' }, { k: 'sustancia', l: 'Sustancias' }, { k: 'ley', l: 'Ley' }, { k: 'ciencia', l: 'Ciencia' }, { k: 'cultura', l: 'Cultura' },
+];
+---
+<Layout title="Cronología" description="Historia de las drogas: descubrimientos, leyes, ciencia y cultura.">
+  <section class="wrap head">
+    <span class="label">Cronología / {evs.length} hitos</span>
+    <h1>Crono<span class="acid">logía</span></h1>
+    <div class="f">{kinds.map((k, i) => <button type="button" class:list={['fb', { on: i === 0 }]} data-k={k.k}>{k.l}</button>)}</div>
+  </section>
+
+  <section class="section">
+    <div class="wrap">
+      <ol class="tl" id="tl">
+        {evs.map((e) => (
+          <li data-k={e.kind} style={e.color ? `--t:${e.color}` : undefined}>
+            <span class="y">{e.label}</span>
+            <span class="dot"></span>
+            <div class="c">
+              <span class="label">{e.kind}</span>
+              {e.href ? <a href={e.href} class="tt">{e.title}</a> : <span class="tt">{e.title}</span>}
+              <p>{e.t}</p>
+            </div>
+          </li>
+        ))}
+      </ol>
+    </div>
+  </section>
+</Layout>
+
+<script>
+  const bs = [...document.querySelectorAll<HTMLButtonElement>('.fb')];
+  const items = [...document.querySelectorAll<HTMLElement>('#tl li')];
+  bs.forEach((b) => b.addEventListener('click', () => {
+    bs.forEach((x) => x.classList.toggle('on', x === b));
+    items.forEach((li) => (li.style.display = b.dataset.k === 'all' || li.dataset.k === b.dataset.k ? '' : 'none'));
+  }));
+</script>
+
+<style>
+  .head { padding-top: 56px; padding-bottom: 40px; }
+  h1 { font-size: clamp(56px, 11vw, 160px); margin: 12px 0 28px; }
+  .f { display: flex; flex-wrap: wrap; gap: 6px; }
+  .fb { background: transparent; border: 1px solid var(--line-2); color: var(--mute); font-family: var(--mono); font-size: 11px; letter-spacing: 0.12em; text-transform: uppercase; padding: 7px 12px; cursor: pointer; }
+  .fb:hover { color: var(--acid); border-color: var(--acid); }
+  .fb.on { background: var(--acid); color: #000; border-color: var(--acid); }
+  .tl { list-style: none; padding: 0; margin: 0; position: relative; }
+  .tl::before { content: ''; position: absolute; left: 171px; top: 0; bottom: 0; border-left: 1px solid var(--line-2); }
+  .tl li { display: grid; grid-template-columns: 150px 44px 1fr; padding: 16px 0; align-items: start; border-bottom: 1px solid var(--line); }
+  .y { font-family: var(--display); font-weight: 900; font-stretch: 125%; font-size: 26px; text-align: right; padding-right: 12px; line-height: 1; color: var(--t, var(--fg)); }
+  li[data-k='ley'] .y { color: var(--red); }
+  .dot { width: 10px; height: 10px; border-radius: 50%; background: var(--t, var(--mute)); margin: 8px 0 0 17px; position: relative; z-index: 1; box-shadow: 0 0 10px var(--t, transparent); }
+  li[data-k='ley'] .dot { background: var(--red); }
+  .c { padding-left: 8px; max-width: 72ch; }
+  .tt { display: block; font-family: var(--display); font-weight: 900; font-stretch: 112%; text-transform: uppercase; font-size: 20px; margin: 4px 0 6px; }
+  a.tt:hover { color: var(--acid); }
+  .c p { margin: 0; color: var(--mute); font-size: 13px; }
+  @media (max-width: 640px) {
+    .tl::before { left: 5px; }
+    .tl li { grid-template-columns: 26px 1fr; }
+    .y { grid-column: 2; text-align: left; font-size: 22px; padding: 0 0 4px 8px; }
+    .dot { grid-row: 1; grid-column: 1; margin: 6px 0 0 0; }
+    .c { grid-column: 2; }
+  }
+</style>

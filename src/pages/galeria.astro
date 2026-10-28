@@ -1,0 +1,43 @@
+---
+import Layout from '../layouts/Layout.astro';
+import { substances, pad } from '../data';
+import { familyById } from '../data/families';
+import { photos, photoAt } from '../data/photos';
+
+const items = substances.filter((s) => photos[s.slug]).map((s) => ({ s, p: photos[s.slug], f: familyById[s.family] }));
+---
+<Layout title="Galería" description="Fotografías reales de las sustancias (Wikimedia Commons, licencias libres).">
+  <section class="wrap head">
+    <span class="label">Galería / {items.length} fotografías</span>
+    <h1>Gale<span class="acid">ría</span></h1>
+    <p class="lede">Fotografías reales de Wikimedia Commons con licencia libre (dominio público, CC0 y Creative Commons). Muchas proceden de incautaciones de la DEA. Pulsa una foto para abrir su ficha.</p>
+  </section>
+
+  <section class="section">
+    <div class="wrap">
+      <div class="wall">
+        {items.map(({ s, p, f }) => (
+          <a href={`/sustancias/${s.slug}`} class="ph" style={`--c:${f.color}`}>
+            <img src={photoAt(p, 640)} alt={`Fotografía de ${s.name}`} width={p.w} height={p.h} loading="lazy" decoding="async" />
+            <span class="cap"><b>{s.name}</b><span class="label">#{pad(s.n)}</span></span>
+            <span class="cr">{p.author} · {p.license}</span>
+          </a>
+        ))}
+      </div>
+    </div>
+  </section>
+</Layout>
+
+<style>
+  .head { padding-top: 56px; padding-bottom: 32px; }
+  h1 { font-size: clamp(56px, 11vw, 160px); margin: 12px 0 24px; }
+  .lede { max-width: 72ch; color: var(--mute); }
+  .wall { columns: 4 240px; column-gap: 12px; }
+  .ph { display: block; break-inside: avoid; margin: 0 0 12px; border: 1px solid var(--line); background: var(--bg-2); }
+  .ph:hover { border-color: var(--c); }
+  img { width: 100%; height: auto; display: block; background: #000; filter: grayscale(0.35) contrast(1.05); transition: filter 0.15s; }
+  .ph:hover img { filter: none; }
+  .cap { display: flex; justify-content: space-between; align-items: baseline; gap: 10px; padding: 10px 12px 2px; border-top: 2px solid var(--c); }
+  .cap b { font-family: var(--display); font-weight: 900; font-stretch: 112%; text-transform: uppercase; font-size: 16px; }
+  .cr { display: block; font-size: 10px; color: var(--dim); padding: 0 12px 10px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+</style>

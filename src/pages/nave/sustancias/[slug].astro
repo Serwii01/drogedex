@@ -1,0 +1,284 @@
+---
+import { u } from '../../../themes/nave/base';
+import Layout from '../../../themes/nave/layouts/Layout.astro';
+import Sigil from '../../../themes/nave/components/Sigil.astro';
+import Structure from '../../../themes/nave/components/Structure.astro';
+import Synapse from '../../../themes/nave/components/Synapse.astro';
+import Bars from '../../../themes/nave/components/Bars.astro';
+import Timeline from '../../../themes/nave/components/Timeline.astro';
+import Radar from '../../../themes/nave/components/Radar.astro';
+import Ticket from '../../../themes/nave/components/Ticket.astro';
+import Photo from '../../../themes/nave/components/Photo.astro';
+import { photos } from '../../../data/photos';
+import { substances, bySlug, countries, pad } from '../../../data';
+import { familyById, type Target } from '../../../data/families';
+import { comboKeys, risk, riskInfo, note, type Risk } from '../../../themes/nave/data/interactions';
+import { glossary } from '../../../data/extra';
+import { paper } from '../../../themes/nave/lib/tone';
+
+export function getStaticPaths() {
+  return substances.map((s) => ({ params: { slug: s.slug } }));
+}
+
+const s = bySlug[Astro.params.slug!];
+const f = familyById[s.family];
+const tone = paper[s.family];
+const i = substances.indexOf(s);
+const prev = substances[(i - 1 + substances.length) % substances.length];
+const next = substances[(i + 1) % substances.length];
+const siblings = substances.filter((x) => x.family === s.family && x.slug !== s.slug);
+const target: Target = s.target ?? f.target;
+const tLabels: Partial<Record<Target, string>> = { adenosina: 'Receptores de adenosina', nachr: 'Receptor nicotínico α4β2', gabaa: 'Receptor GABA-A' };
+const targetLabel = s.target ? tLabels[s.target] ?? f.targetLabel : f.targetLabel;
+
+const order: Risk[] = ['X', 'U', 'C', 'S', 'N', 'D'];
+const combos = s.combo
+  ? comboKeys.filter((k) => k.key !== s.combo).map((k) => ({ ...k, r: risk(s.combo!, k.key)!, note: note(s.combo!, k.key) }))
+      .sort((a, b) => order.indexOf(a.r) - order.indexOf(b.r))
+  : [];
+const danger = combos.filter((c) => c.r === 'X' || c.r === 'U');
+const rest = combos.filter((c) => c.r !== 'X' && c.r !== 'U');
+const priceRows = s.prices.map((p) => ({ name: countries[p.c] ?? p.c, v: p.v, note: p.unit, hot: p.c === 'ES' })).sort((a, b) => b.v - a.v);
+const terms = glossary.filter((g) => g.see?.includes(s.slug));
+const alcohol = bySlug['alcohol'];
+const year = new Date().getFullYear();
+const radar: { name: string; harm: typeof s.harm; style: 'solid' | 'ghost' }[] = [{ name: s.name, harm: s.harm, style: 'solid' }];
+if (s.slug !== 'alcohol') radar.push({ name: 'Alcohol', harm: alcohol.harm, style: 'ghost' });
+const url = new URL(u(`/sustancias/${s.slug}`), Astro.site).href;
+---
+<Layout title={s.name} description={s.summary}>
+  <article style={`--tone:${tone}`}>
+    <header class:list={["wrap hero", { 'has-photo': !!photos[s.slug] }]}>
+      <div class="htxt">
+      <div class="meta">
+        <span class="no st">#{pad(s.n)}</span>
+        <a href={u(`/familias/${f.id}`)} class="fam"><i></i>{f.code} · {f.name}</a>
+        <span class="stamp lg">{s.legal.startsWith('Legal') ? 'Legal' : s.legal.startsWith('Fiscaliz') ? 'Fiscalizada' : 'Controlada'}</span>
+      </div>
+      <h1>{s.name}</h1>
+      <p class="cls">{s.cls}</p>
+      <p class="aka">{s.aka.map((a) => <span class="chip">{a}</span>)}</p>
+      <div class="tools noprint">
+        <button class="btn" id="cite" type="button">Citar APA</button>
+        <button class="btn" id="print" type="button">Imprimir / PDF</button>
+        <a class="btn" href={u(`/comparar?a=${s.slug}&b=${s.slug === 'alcohol' ? 'cannabis' : 'alcohol'}`)}>Comparar</a>
+      </div>
+      <p class="cite-out lbl" id="cite-out" hidden></p>
+      </div>
+      <Photo slug={s.slug} name={s.name} />
+    </header>
+
+    <section class="block">
+      <div class="wrap two">
+        <div>
+          <p class="lbl">01 · Resumen</p>
+          <p class="lede">{s.summary}</p>
+          <table class="data">
+            <tbody>
+              <tr><th>Vías</th><td>{s.routes.join(' · ')}</td></tr>
+              <tr><th>Diana</th><td>{targetLabel}</td></tr>
+              <tr><th>Estatus</th><td>{s.legal}</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <div class="imgs">
+          {s.pubchem && <Structure name={s.name} query={s.pubchem} />}
+          <div class="sig"><Sigil slug={s.slug} color={tone} label={`Firma de ${s.name}`} /></div>
+        </div>
+      </div>
+    </section>
+
+    <section class="block">
+      <div class="wrap two">
+        <div>
+          <p class="lbl">02 · Mecanismo</p>
+          <p>{s.mechanism}</p>
+          <p class="mute">{f.mechanism}</p>
+        </div>
+        <Synapse target={target} label={targetLabel} />
+      </div>
+    </section>
+
+    <section class="block">
+      <div class="wrap two">
+        <div>
+          <p class="lbl">03 · Origen</p>
+          <div class="year st">{s.history.year}</div>
+          <p class="lbl">{s.history.place}</p>
+          <p>{s.history.text}</p>
+        </div>
+        <div>
+          <p class="lbl">04 · Dónde se consume</p>
+          <ol class="top">{s.consumption.top.map((r) => <li>{r}</li>)}</ol>
+          <p class="mute">{s.consumption.text}</p>
+        </div>
+      </div>
+    </section>
+
+    <section class="block">
+      <div class="wrap">
+        <div class="head"><span class="lbl">05 · Mercado</span><div><h2>Precio</h2><p>Estimaciones orientativas en euros (EUDA, UNODC, Global Drug Survey, prensa; 2022–2025). España en naranja.</p></div></div>
+        {priceRows.length ? <Bars rows={priceRows} unit=" €" decimals={priceRows.some((r) => r.v % 1 !== 0) ? 1 : 0} /> : <p class="mute">{s.priceNote}</p>}
+        {priceRows.length > 0 && s.priceNote && <p class="mute small">{s.priceNote}</p>}
+      </div>
+    </section>
+
+    <section class="block">
+      <div class="wrap">
+        <div class="head"><span class="lbl">06 · Efectos</span><div><h2>Efectos</h2></div></div>
+        <div class="fx">
+          <div><h3>Buscados</h3><ul class="dash">{s.effects.pos.map((e) => <li>{e}</li>)}</ul></div>
+          <div><h3>Adversos</h3><ul class="dash">{s.effects.neg.map((e) => <li>{e}</li>)}</ul></div>
+          <div><h3 class="hz">Largo plazo</h3><ul class="dash">{s.effects.long.map((e) => <li>{e}</li>)}</ul></div>
+        </div>
+      </div>
+    </section>
+
+    {s.duration && (
+      <section class="block">
+        <div class="wrap">
+          <div class="head"><span class="lbl">07 · Curva</span><div><h2>Duración</h2><p>Subida, meseta y bajada típicas. Varía con dosis, vía y tolerancia.</p></div></div>
+          <Timeline rows={[{ name: s.name, d: s.duration }]} />
+        </div>
+      </section>
+    )}
+
+    <section class="block">
+      <div class="wrap two">
+        <div>
+          <p class="lbl">08 · Daño</p>
+          <h2>Riesgo</h2>
+          <p class="mute">Escala 0–3 de Nutt et al. (2007): daño físico, dependencia y daño social. Línea discontinua: alcohol.</p>
+          <ul class="dash">{f.risks.map((r) => <li>{r}</li>)}</ul>
+        </div>
+        <Radar series={radar} />
+      </div>
+    </section>
+
+    {combos.length > 0 && (
+      <section class="block">
+        <div class="wrap">
+          <div class="head"><span class="lbl">09 · Mezclas</span><div><h2>No mezclar con</h2><p><a href={u(`/mezclas?s=${s.slug}`)} class="hz">Probar en el comprobador →</a></p></div></div>
+          <div class="danger">
+            {danger.map((c) => (
+              <div class="dg" style={`--r:${riskInfo[c.r].color}`}>
+                <span class="st nm">{c.label}</span>
+                <span class="tag">{riskInfo[c.r].label}</span>
+                {c.note && <p>{c.note}</p>}
+              </div>
+            ))}
+          </div>
+          <p class="lbl rest-t">Resto</p>
+          <div class="rest">
+            {rest.map((c) => <span class="rs" style={`--r:${riskInfo[c.r].color}`}><i>{riskInfo[c.r].short}</i>{c.label}</span>)}
+          </div>
+        </div>
+      </section>
+    )}
+
+    <section class="block rr">
+      <div class="wrap two">
+        <div><p class="lbl">10 · Reducción de riesgos</p><h2>Si vas a consumir</h2></div>
+        <ol class="tips">{s.reduction.map((r) => <li>{r}</li>)}</ol>
+      </div>
+    </section>
+
+    {terms.length > 0 && (
+      <section class="block">
+        <div class="wrap">
+          <div class="head"><span class="lbl">11 · Glosario</span><div><h2>Términos</h2></div></div>
+          <dl class="terms">{terms.map((g) => <div><dt class="st">{g.t}</dt><dd>{g.d}</dd></div>)}</dl>
+        </div>
+      </section>
+    )}
+
+    {siblings.length > 0 && (
+      <section class="block noprint">
+        <div class="wrap">
+          <div class="head"><span class="lbl">Misma familia</span><div><h2>{f.name}</h2></div></div>
+          <div class="sib">{siblings.map((x) => <Ticket s={x} />)}</div>
+        </div>
+      </section>
+    )}
+
+    <nav class="wrap pn noprint">
+      <a href={u(`/sustancias/${prev.slug}`)} id="prev">← {prev.name}</a>
+      <span class="lbl">Teclas ← → para navegar</span>
+      <a href={u(`/sustancias/${next.slug}`)} id="next">{next.name} →</a>
+    </nav>
+  </article>
+</Layout>
+
+<script define:vars={{ name: s.name, year, url }}>
+  document.getElementById('print').onclick = () => window.print();
+  document.getElementById('cite').onclick = async () => {
+    const d = new Date().toLocaleDateString('es-ES', { day: 'numeric', month: 'long', year: 'numeric' });
+    const ref = `Drogedex. (${year}). ${name}. En Drogedex: enciclopedia de sustancias psicoactivas. Recuperado el ${d} de ${url}`;
+    const out = document.getElementById('cite-out');
+    out.hidden = false;
+    try { await navigator.clipboard.writeText(ref); out.textContent = 'Copiado: ' + ref; } catch { out.textContent = ref; }
+  };
+  document.addEventListener('keydown', (e) => {
+    if (/input|textarea|select/i.test(document.activeElement?.tagName || '') || e.metaKey || e.ctrlKey || e.altKey) return;
+    if (e.key === 'ArrowLeft') location.href = document.getElementById('prev').href;
+    if (e.key === 'ArrowRight') location.href = document.getElementById('next').href;
+  });
+</script>
+
+<style>
+  .hero { padding-top: 48px; padding-bottom: 56px; }
+  .has-photo { display: grid; grid-template-columns: 1fr 1.05fr; gap: clamp(28px, 5vw, 72px); align-items: center; }
+  .has-photo h1 { font-size: clamp(56px, 8.5vw, 150px); }
+  @media (max-width: 860px) { .has-photo { grid-template-columns: 1fr; } }
+  .meta { display: flex; flex-wrap: wrap; gap: 16px; align-items: center; }
+  .no { font-size: 32px; font-weight: 900; color: var(--mute); }
+  .fam { display: inline-flex; align-items: center; gap: 8px; font-size: 11px; letter-spacing: 0.12em; text-transform: uppercase; }
+  .fam i { width: 22px; height: 12px; background: var(--tone); }
+  .fam:hover { color: var(--hazard); }
+  .lg { font-size: 14px; }
+  h1 { font-size: clamp(64px, 14vw, 210px); margin: 18px 0 14px; overflow-wrap: anywhere; }
+  .cls { color: var(--mute); margin: 0 0 14px; }
+  .aka { display: flex; flex-wrap: wrap; gap: 6px; margin: 0 0 26px; }
+  .tools { display: flex; flex-wrap: wrap; gap: 8px; }
+  .cite-out { margin-top: 14px; max-width: 90ch; text-transform: none; letter-spacing: 0; }
+
+  .two { display: grid; grid-template-columns: 1fr 1fr; gap: clamp(32px, 6vw, 80px); align-items: start; }
+  @media (max-width: 860px) { .two { grid-template-columns: 1fr; } }
+  .lede { font-size: clamp(17px, 1.8vw, 21px); line-height: 1.5; margin: 14px 0 28px; }
+  .imgs { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; align-items: start; }
+  .sig { aspect-ratio: 1; border: 1px solid var(--line-2); transform: rotate(-1deg); }
+  .sig :global(svg) { width: 100%; height: 100%; }
+  .year { font-size: clamp(72px, 11vw, 150px); font-weight: 900; color: var(--tone); margin: 10px 0 6px; line-height: 0.85; }
+  ol.top { padding-left: 0; list-style: none; counter-reset: c; margin: 14px 0 18px; }
+  ol.top li { counter-increment: c; padding: 10px 0; border-bottom: 1px dashed var(--line-2); font-size: 15px; }
+  ol.top li::before { content: counter(c, decimal-leading-zero); color: var(--hazard); font-size: 11px; margin-right: 14px; }
+  .small { font-size: 12px; margin-top: 14px; }
+  .fx { display: grid; grid-template-columns: repeat(3, 1fr); gap: 32px; }
+  .fx h3 { margin-bottom: 10px; }
+  @media (max-width: 860px) { .fx { grid-template-columns: 1fr; } }
+
+  .danger { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 10px; }
+  .dg { border: 2px solid var(--r); padding: 16px; display: flex; flex-direction: column; gap: 6px; }
+  .dg .nm { font-size: 30px; font-weight: 900; }
+  .dg .tag { align-self: flex-start; background: var(--r); color: var(--ink); font-size: 10px; letter-spacing: 0.12em; text-transform: uppercase; padding: 1px 6px; font-weight: 600; }
+  .dg p { margin: 4px 0 0; font-size: 12px; color: var(--mute); }
+  .rest-t { margin: 28px 0 10px; }
+  .rest { display: flex; flex-wrap: wrap; gap: 6px; }
+  .rs { display: inline-flex; gap: 8px; align-items: center; border: 1px solid var(--line-2); padding: 3px 10px 3px 3px; font-size: 12px; }
+  .rs i { font-style: normal; background: var(--r); color: var(--ink); min-width: 22px; text-align: center; font-weight: 600; }
+
+  .rr { background: var(--hazard); color: var(--ink); border: 0; }
+  .rr .lbl { color: var(--ink); }
+  .tips { margin: 0; padding: 0; list-style: none; counter-reset: t; }
+  .tips li { counter-increment: t; padding: 14px 0; border-bottom: 2px solid rgba(20, 20, 18, 0.85); font-size: 16px; font-weight: 500; display: flex; gap: 16px; }
+  .tips li::before { content: counter(t, decimal-leading-zero); font-family: var(--stencil); font-weight: 900; font-size: 22px; line-height: 1; }
+
+  .terms { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 24px; margin: 0; }
+  .terms dt { font-size: 26px; font-weight: 800; }
+  .terms dd { margin: 6px 0 0; color: var(--mute); font-size: 13px; }
+  .sib { display: grid; grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)); gap: 14px 12px; }
+  .pn { display: flex; justify-content: space-between; align-items: center; gap: 12px; padding-top: 24px; padding-bottom: 24px; border-top: 1px solid var(--line); text-transform: uppercase; font-size: 12px; letter-spacing: 0.08em; }
+  .pn a:hover { color: var(--hazard); }
+  @media (max-width: 560px) { .pn .lbl { display: none; } }
+  @media print { .rr { background: none; } .rr .lbl, .rr { color: #111; } .tips li { border-color: #ccc; } }
+</style>

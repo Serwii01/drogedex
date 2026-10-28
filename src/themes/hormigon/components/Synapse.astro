@@ -1,0 +1,60 @@
+---
+/** Esquema de sinapsis en línea de plantilla, con la diana en naranja. */
+import type { Target } from '../../../data/families';
+
+interface Props { target: Target; label: string }
+const { target, label } = Astro.props;
+const zone: Record<Target, 'pre-t' | 'post-r' | 'pre-r' | 'vessel'> = {
+  mu: 'post-r', dat: 'pre-t', sert: 'pre-t', '5ht2a': 'post-r', nmda: 'post-r', gabaa: 'post-r',
+  cb1: 'pre-r', machr: 'post-r', adenosina: 'post-r', nachr: 'post-r', vaso: 'vessel',
+};
+const z = zone[target];
+const ves = [[300, 110], [370, 90], [440, 118], [510, 92], [560, 130], [340, 160], [470, 155]];
+const mol = [[340, 258], [390, 272], [445, 254], [505, 276], [555, 262], [420, 286]];
+---
+<figure class="syn">
+  <svg viewBox="0 0 860 440" role="img" aria-label={`Esquema de sinapsis. Diana: ${label}`}>
+    <path d="M180 20 L700 20 L700 150 Q700 215 625 222 L255 222 Q180 215 180 150 Z" class="cell" />
+    <text x="196" y="46" class="t">PRESINÁPTICA</text>
+    {ves.map(([x, y]) => <g><circle cx={x} cy={y} r="20" class="ves" />{[[-6, -4], [6, -5], [0, 7]].map(([dx, dy]) => <circle cx={x + dx} cy={y + dy} r="3" class="nt" />)}</g>)}
+
+    <g class:list={[{ hot: z === 'pre-t' }]}>
+      <rect x="600" y="200" width="30" height="44" class="rc" />
+      <text x="645" y="196" class="t s">TRANSPORTADOR</text>
+    </g>
+    <g class:list={[{ hot: z === 'pre-r' }]}>
+      <rect x="226" y="200" width="28" height="38" class="rc" />
+      <text x="90" y="196" class="t s">RECEPTOR PRE</text>
+    </g>
+
+    {mol.map(([x, y]) => <circle cx={x} cy={y} r="3.5" class="nt" />)}
+    <text x="715" y="268" class="t s">HENDIDURA</text>
+
+    <path d="M180 420 L700 420 L700 330 Q700 305 672 305 L208 305 Q180 305 180 330 Z" class="cell" />
+    <text x="196" y="408" class="t">POSTSINÁPTICA</text>
+    {[250, 330, 410, 490, 570].map((x, i) => (
+      <g class:list={[{ hot: z === 'post-r' && i === 2 }]}>
+        <path d={`M${x} 305 L${x} 288 L${x + 30} 288 L${x + 30} 305`} class="rc" />
+        <rect x={x + 6} y="305" width="18" height="24" class="rc" />
+      </g>
+    ))}
+
+    {z === 'vessel' && <g class="hot"><rect x="740" y="30" width="96" height="390" rx="48" class="rc" /><text x="788" y="230" text-anchor="middle" class="t s">VASO</text></g>}
+  </svg>
+  <figcaption><span class="lbl">Diana</span> <b class="hz">{label}</b></figcaption>
+</figure>
+
+<style>
+  .syn { margin: 0; }
+  svg { width: 100%; height: auto; }
+  .cell { fill: none; stroke: var(--paper); stroke-width: 2; }
+  .ves { fill: none; stroke: var(--mute); }
+  .nt { fill: var(--paper); }
+  .rc { fill: var(--concrete-2); stroke: var(--paper); stroke-width: 1.5; }
+  .t { font-family: var(--mono); font-size: 12px; letter-spacing: 2px; fill: var(--paper); }
+  .s { font-size: 10px; fill: var(--mute); }
+  .hot .rc { fill: var(--hazard); stroke: var(--hazard); animation: flicker 4s infinite; }
+  .hot .t { fill: var(--hazard); }
+  figcaption { border-top: 1px dashed var(--line-2); padding-top: 10px; margin-top: 6px; display: flex; gap: 12px; align-items: baseline; }
+  b { font-family: var(--stencil); font-weight: 300; text-transform: uppercase; font-size: 22px; }
+</style>

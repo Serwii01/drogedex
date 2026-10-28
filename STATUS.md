@@ -3,17 +3,21 @@
 > Lo mantiene Claude con `/cerrar`. Es la memoria de trabajo: dónde se quedó y qué viene después.
 
 ## Estado actual
-Primera versión completa y publicada en drogedex.vercel.app: 35 sustancias en 9 familias con fichas (estructura de PubChem, foto de Wikimedia, póster generativo, daños, efectos, legalidad y precios), matriz de combinaciones 21×21, gráficos con datos de Nutt/UNODC/EDADES/CDC/Gable y página de metodología. Compila sin errores (51 páginas, comprobado el 2026-10-28). Solo tiene un commit, el inicial.
+En la rama `fusion` (sin publicar todavía) la web reúne los tres diseños: **Original** en `/`, **Nave** en `/nave` y **Hormigón** en `/hormigon`, con un selector para cambiar de diseño en cualquier página. La Original ya tiene todo lo que tenían Nave y Hormigón: 13 secciones, buscador, comprobador de mezclas, comparador, psicología, mapa, cronología, glosario, emergencias y galería. Compila (177 páginas) y está revisada en el navegador. `main` sigue con la versión antigua hasta que se fusione `fusion`. La versión anterior está guardada en la rama `original`.
 
 ## Siguientes pasos
-- [ ] Elegir el diseño definitivo entre las tres variantes, todas del 13 oct y publicadas: esta (original, drogedex.vercel.app), `drogedex-nave` (nave rave / ruin bar, acento naranja; drogedex-nave.vercel.app) y `drogedex-beton` (club de hormigón, monocroma y brutalista; drogedex-beton.vercel.app). Comparten los datos y cambian estilos y componentes. Seguir solo en una y archivar las otras (prioridad `archivado` en el hub).
-- [ ] Comprobar que lo publicado en Vercel corresponde a este repo y a su último commit.
-- [ ] Revisar el contenido con criterio del TFG: fuentes de cada dato, sustancias con daños `est` (estimación editorial) y textos de reducción de riesgos.
-- [ ] Recuperar o volver a escribir `scripts/photo-candidates.mjs` (lo cita `photos.ts`, pero no está en el repo) si hay que añadir fotos.
+- [ ] Subir la rama `fusion` y revisar la vista previa que crea Vercel (todas las secciones, en móvil y escritorio, en los tres diseños)
+- [ ] Fusionar `fusion` en `main` para publicarla en drogedex.vercel.app
+- [ ] Decidir qué hacer con drogedex-nave.vercel.app y drogedex-beton.vercel.app: mantenerlas o redirigirlas a /nave y /hormigon
+- [ ] Revisar el contenido con criterio del TFG: fuentes de cada dato, sustancias con daños `est` (estimación editorial) y textos de reducción de riesgos
+- [ ] Comprobar en el navegador la impresión / PDF de una ficha en el diseño Original
 
 ## Última sesión
 ### 2026-10-28
-- Creadas las fichas `CLAUDE.md` y `STATUS.md` analizando el repo. Comprobado que compila (`npm run build`, 51 páginas) y que drogedex.vercel.app responde.
+- Fusión de los tres diseños: datos comunes en `src/data` (más glosario, cronología, mitos, emergencias, rutas, psicología y salas); Nave y Hormigón importados con `scripts/importar-diseno.mjs` (`npm run disenos`) bajo `/nave` y `/hormigon`; selector de diseño (`ThemeSwitch`) en los tres layouts, que conserva la página y los parámetros; URL canónica de Nave y Hormigón apuntando a la Original.
+- Original al día: 8 secciones nuevas (Mezclas, Comparar, Psicología, Mapa, Cronología, Glosario, Emergencias, Galería) con su estética; layout con menú «Más», buscador (`/`) y botón 112; portada con Herramientas y Mitos; ficha con citar APA, imprimir, comparar, enlace al comprobador, glosario y teclas ← →.
+- Recuperado `scripts/photo-candidates.mjs` (estaba en Nave). Nuevas dependencias para el mapa: `d3-geo`, `topojson-client`, `world-atlas`.
+- Antes: creadas las fichas `CLAUDE.md` y `STATUS.md`; drogedex.vercel.app responde.
 
 ### 2026-10-13 (reconstruido desde git)
 - Versión inicial completa: «Drogedex: enciclopedia de sustancias psicoactivas (TFG Psicología)».
@@ -23,7 +27,12 @@ Primera versión completa y publicada en drogedex.vercel.app: 35 sustancias en 9
 - Enfoque de reducción de riesgos y sin dosis.
 - Daños con la escala de Nutt et al. (2007), marcando si cada valor es publicado o estimado.
 - Imágenes enlazadas desde PubChem y Wikimedia Commons (no se guardan en el repo), con su atribución.
+- Tres diseños por prefijo de URL (no por cambio de CSS) para conservar cada diseño tal cual, con sus componentes propios. La Original va en la raíz.
+- Nave y Hormigón siguen en sus repos y se importan con un script (no se copian a mano): así siguen siendo independientes y se pueden actualizar.
+- Datos únicos para los tres; cada diseño solo cambia los colores del semáforo de riesgo (`src/themes/<id>/data/interactions.ts`).
+- Nave y Hormigón llevan la URL canónica de la Original para que los buscadores no los traten como contenido duplicado.
 
 ## Problemas conocidos
-- `photos.ts` dice haberse generado con `scripts/photo-candidates.mjs`, que no está en el repo.
+- Si se cambia el contenido en el repo de Nave o de Hormigón (`src/data`), el importador avisa pero usa los datos de aquí: hay que llevar el cambio a mano a `src/data`.
 - Las imágenes dependen de PubChem y de Wikimedia Commons: si cambian o caen, las fichas se quedan sin estructura o sin foto.
+- Las páginas `/nave/404` y `/hormigon/404` existen como rutas, pero el 404 real de Vercel es el de la Original.

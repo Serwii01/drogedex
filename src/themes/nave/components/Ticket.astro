@@ -1,0 +1,72 @@
+---
+import { u } from '../base';
+/** Sustancia como ticket de guardarropa. */
+import { familyById } from '../../../data/families';
+import { paper } from '../lib/tone';
+import { pad } from '../../../data';
+import type { Substance } from '../../../data/types';
+
+interface Props { s: Substance & { n: number } }
+const { s } = Astro.props;
+const f = familyById[s.family];
+const c = paper[s.family];
+---
+<a
+  href={u(`/sustancias/${s.slug}`)}
+  class="ticket"
+  style={`--c:${c}`}
+  data-family={s.family}
+  data-search={[s.name, s.symbol, ...s.aka, f.name].join(' ').toLowerCase()}
+>
+  <span class="stub">
+    <span class="no st">{pad(s.n)}</span>
+    <span class="fam">{f.code}</span>
+  </span>
+  <span class="body">
+    <span class="sym st">{s.symbol}</span>
+    <span class="nm">{s.name}</span>
+    <span class="fn">{f.name}</span>
+  </span>
+</a>
+
+<style>
+  .ticket {
+    display: grid;
+    grid-template-columns: 58px 1fr;
+    background: var(--paper);
+    color: var(--ink);
+    min-height: 132px;
+    position: relative;
+    /* muescas de perforación */
+    -webkit-mask: radial-gradient(circle 7px at 58px 0, #0000 98%, #000) top / 100% 51% no-repeat,
+                  radial-gradient(circle 7px at 58px 100%, #0000 98%, #000) bottom / 100% 51% no-repeat;
+    mask: radial-gradient(circle 7px at 58px 0, #0000 98%, #000) top / 100% 51% no-repeat,
+          radial-gradient(circle 7px at 58px 100%, #0000 98%, #000) bottom / 100% 51% no-repeat;
+    transition: transform 0.15s;
+  }
+  .ticket::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background-image: var(--grain);
+    mix-blend-mode: multiply;
+    opacity: 0.5;
+    pointer-events: none;
+  }
+  .ticket:hover { transform: rotate(-1.2deg) translateY(-2px); background: var(--hazard); }
+  .stub {
+    background: var(--c);
+    border-right: 2px dashed rgba(20, 20, 18, 0.55);
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    align-items: center;
+    padding: 12px 0;
+  }
+  .no { writing-mode: vertical-rl; transform: rotate(180deg); font-size: 28px; font-weight: 900; letter-spacing: 0.04em; }
+  .fam { font-size: 10px; font-weight: 600; letter-spacing: 0.1em; }
+  .body { padding: 12px 14px; display: flex; flex-direction: column; min-width: 0; }
+  .sym { font-size: 46px; font-weight: 900; line-height: 0.9; }
+  .nm { margin-top: auto; font-weight: 600; font-size: 13px; text-transform: uppercase; letter-spacing: 0.04em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .fn { font-size: 11px; color: #5d594f; }
+</style>

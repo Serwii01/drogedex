@@ -1,0 +1,68 @@
+---
+import Layout from '../../../themes/hormigon/layouts/Layout.astro';
+import Ticket from '../../../themes/hormigon/components/Ticket.astro';
+import { substances } from '../../../data';
+import { families } from '../../../data/families';
+import { paper } from '../../../themes/hormigon/lib/tone';
+---
+<Layout title="Índice" description="Índice de sustancias psicoactivas filtrable por familia.">
+  <section class="wrap top">
+    <p class="lbl">Sala 01 · {substances.length} entradas</p>
+    <h1>Índice</h1>
+    <div class="ctrl">
+      <input id="q" type="search" placeholder="Buscar nombre o apodo…" autocomplete="off" aria-label="Buscar sustancia" />
+      <div class="filters">
+        <button class="f on" data-f="all" type="button">Todas</button>
+        {families.map((f) => <button class="f" data-f={f.id} style={`--c:${paper[f.id]}`} type="button"><i></i>{f.name}</button>)}
+      </div>
+    </div>
+    <p class="lbl" id="count">{substances.length} resultados</p>
+  </section>
+  <section class="wrap">
+    <div class="tickets" id="grid">{substances.map((s) => <Ticket s={s} />)}</div>
+    <p class="lbl empty" id="empty" hidden>Nada en el guardarropa con ese nombre.</p>
+  </section>
+</Layout>
+
+<script>
+  const q = document.getElementById('q') as HTMLInputElement;
+  const cards = [...document.querySelectorAll<HTMLElement>('#grid .ticket')];
+  const btns = [...document.querySelectorAll<HTMLButtonElement>('.f')];
+  const count = document.getElementById('count')!;
+  const empty = document.getElementById('empty')!;
+  let fam = 'all';
+  const norm = (s: string) => s.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase();
+  function apply() {
+    const t = norm(q.value.trim());
+    let n = 0;
+    for (const c of cards) {
+      const ok = (fam === 'all' || c.dataset.family === fam) && (!t || norm(c.dataset.search || '').includes(t));
+      c.style.display = ok ? '' : 'none';
+      if (ok) n++;
+    }
+    count.textContent = `${n} resultado${n === 1 ? '' : 's'}`;
+    empty.hidden = n > 0;
+  }
+  btns.forEach((b) => b.addEventListener('click', () => { fam = b.dataset.f!; btns.forEach((x) => x.classList.toggle('on', x === b)); apply(); }));
+  q.addEventListener('input', apply);
+  const h = location.hash.slice(1);
+  if (h) btns.find((b) => b.dataset.f === h)?.click();
+</script>
+
+<style>
+  .top { padding-top: 56px; padding-bottom: 28px; }
+  h1 { margin: 10px 0 30px; }
+  .ctrl { display: grid; gap: 16px; }
+  input { background: transparent; border: 0; border-bottom: 1px solid var(--line-2); color: var(--paper); font: inherit; font-size: 18px; padding: 8px 0; outline: none; max-width: 480px; }
+  input:focus { border-color: var(--hazard); }
+  .filters { display: flex; flex-wrap: wrap; gap: 6px; }
+  .f { --c: var(--paper); display: inline-flex; gap: 8px; align-items: center; background: transparent; border: 1px solid var(--line-2); color: var(--mute); font-family: var(--mono); font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase; padding: 6px 10px; cursor: pointer; }
+  .f i { width: 10px; height: 10px; background: var(--c); }
+  .f:hover { color: var(--paper); }
+  .f.on { background: var(--paper); color: var(--ink); border-color: var(--paper); }
+  #count { margin-top: 20px; }
+  .tickets { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(150px, 100%), 1fr)); gap: 1px; background: var(--line); border: 1px solid var(--line); margin-bottom: 120px; }
+  .tickets :global(.ticket) { border: 0; }
+  @media (max-width: 520px) { .tickets { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+  .empty { padding-bottom: 120px; }
+</style>

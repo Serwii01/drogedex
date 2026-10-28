@@ -11,6 +11,7 @@ import Photo from '../../components/Photo.astro';
 import { substances, bySlug, countries, pad } from '../../data';
 import { familyById, type Target } from '../../data/families';
 import { comboKeys, risk, riskInfo, note, type Risk } from '../../data/interactions';
+import { glossary } from '../../data/extra';
 
 export function getStaticPaths() {
   return substances.map((s) => ({ params: { slug: s.slug } }));
@@ -43,6 +44,10 @@ const priceRows = s.prices
   .map((p) => ({ name: countries[p.c] ?? p.c, v: p.v, note: p.unit }))
   .sort((a, b) => b.v - a.v);
 const units = [...new Set(s.prices.map((p) => p.unit))];
+const terms = glossary.filter((g) => g.see?.includes(s.slug));
+const status = s.legal.startsWith('Legal') ? 'Legal' : s.legal.startsWith('Fiscaliz') ? 'Fiscalizada' : 'Controlada';
+const year = new Date().getFullYear();
+const url = new URL(`/sustancias/${s.slug}`, Astro.site).href;
 ---
 <Layout title={s.name} description={s.summary}>
   <article style={`--c:${f.color}`}>
@@ -52,6 +57,7 @@ const units = [...new Set(s.prices.map((p) => p.unit))];
           <div class="topline">
             <span class="num">#{pad(s.n)}</span>
             <a href={`/familias/${f.id}`} class="fam"><i></i>{f.name}</a>
+            <span class="status">{status}</span>
           </div>
           <div class="sym">{s.symbol}</div>
           <h1>{s.name}</h1>
@@ -59,14 +65,21 @@ const units = [...new Set(s.prices.map((p) => p.unit))];
           <div class="aka">
             {s.aka.map((a) => <span class="chip">{a}</span>)}
           </div>
+          <div class="tools noprint">
+            <button class="btn" id="cite" type="button">Citar APA</button>
+            <button class="btn" id="print" type="button">Imprimir / PDF</button>
+            <a class="btn" href={`/comparar?a=${s.slug}&b=${s.slug === 'alcohol' ? 'cannabis' : 'alcohol'}`}>Comparar</a>
+          </div>
+          <p class="cite-out label" id="cite-out" hidden></p>
         </div>
         <div class="art">
           <Sigil slug={s.slug} color={f.color} symbol={s.symbol} n={s.n} detail />
         </div>
       </div>
-      <nav class="wrap pn">
-        <a href={`/sustancias/${prev.slug}`}>← #{pad(prev.n)} {prev.name}</a>
-        <a href={`/sustancias/${next.slug}`}>{next.name} #{pad(next.n)} →</a>
+      <nav class="wrap pn noprint">
+        <a href={`/sustancias/${prev.slug}`} id="prev">← #{pad(prev.n)} {prev.name}</a>
+        <span class="keys">Teclas ← → para navegar</span>
+        <a href={`/sustancias/${next.slug}`} id="next">{next.name} #{pad(next.n)} →</a>
       </nav>
     </header>
 
@@ -215,7 +228,10 @@ const units = [...new Set(s.prices.map((p) => p.unit))];
             <span class="idx">10 / INTERACCIONES</span>
             <div>
               <h2>Combinaciones</h2>
-              <p>Riesgo de combinar {s.name} con otras sustancias, ordenado de mayor a menor. <a href="/combinaciones" class="acid">Ver la tabla completa →</a></p>
+              <p>
+                Riesgo de combinar {s.name} con otras sustancias, ordenado de mayor a menor.
+                <a href={`/mezclas?s=${s.slug}`} class="acid">Probar en el comprobador →</a> · <a href="/combinaciones" class="acid">Ver la tabla completa →</a>
+              </p>
             </div>
           </div>
           <div class="combos">
@@ -247,11 +263,23 @@ const units = [...new Set(s.prices.map((p) => p.unit))];
       </div>
     </section>
 
-    {siblings.length > 0 && (
+    {terms.length > 0 && (
       <section class="section">
         <div class="wrap">
           <div class="section-head">
-            <span class="idx">12 / FAMILIA</span>
+            <span class="idx">12 / GLOSARIO</span>
+            <div><h2>Términos</h2><p><a href="/glosario" class="acid">Glosario completo →</a></p></div>
+          </div>
+          <dl class="terms">{terms.map((g) => <div><dt>{g.t}</dt><dd>{g.d}</dd></div>)}</dl>
+        </div>
+      </section>
+    )}
+
+    {siblings.length > 0 && (
+      <section class="section noprint">
+        <div class="wrap">
+          <div class="section-head">
+            <span class="idx">{terms.length > 0 ? '13' : '12'} / FAMILIA</span>
             <div><h2>Más {f.name.toLowerCase()}</h2></div>
           </div>
           <div class="sib">{siblings.map((x) => <Card s={x} />)}</div>
@@ -261,7 +289,39 @@ const units = [...new Set(s.prices.map((p) => p.unit))];
   </article>
 </Layout>
 
+<script define:vars={{ name: s.name, year, url }}>
+  document.getElementById('print').onclick = () => window.print();
+  document.getElementById('cite').onclick = async () => {
+    const d = new Date().toLocaleDateString('es-ES', { day: 'numeric', month: 'long', year: 'numeric' });
+    const ref = `Drogedex. (${year}). ${name}. En Drogedex: enciclopedia de sustancias psicoactivas. Recuperado el ${d} de ${url}`;
+    const out = document.getElementById('cite-out');
+    out.hidden = false;
+    try { await navigator.clipboard.writeText(ref); out.textContent = 'Copiado: ' + ref; } catch { out.textContent = ref; }
+  };
+  document.addEventListener('keydown', (e) => {
+    if (/input|textarea|select/i.test(document.activeElement?.tagName || '') || e.metaKey || e.ctrlKey || e.altKey) return;
+    if (e.key === 'ArrowLeft') location.href = document.getElementById('prev').href;
+    if (e.key === 'ArrowRight') location.href = document.getElementById('next').href;
+  });
+</script>
+
 <style>
+  .status { font-size: 11px; text-transform: uppercase; letter-spacing: 0.14em; padding: 4px 10px; border: 1px solid var(--line-2); color: var(--mute); }
+  .tools { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 24px; }
+  .tools .btn { padding: 9px 14px; font-size: 11px; }
+  .cite-out { margin-top: 14px; max-width: 90ch; text-transform: none; letter-spacing: 0; color: var(--fg); }
+  .keys { color: var(--dim); }
+  @media (max-width: 560px) { .keys { display: none; } }
+  .terms { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 12px; margin: 0; }
+  .terms > div { border: 1px solid var(--line); background: var(--bg-2); padding: 18px; }
+  .terms dt { font-family: var(--display); font-weight: 900; font-stretch: 112%; text-transform: uppercase; font-size: 18px; }
+  .terms dd { margin: 8px 0 0; color: var(--mute); font-size: 13px; }
+  @media print {
+    :global(.top), :global(.foot), :global(.dx-switch), .noprint { display: none !important; }
+    :global(body) { background: #fff; color: #111; }
+    :global(body::before) { display: none; }
+    .rr { background: none; color: #111; }
+  }
   .hero { border-bottom: 1px solid var(--line); background: radial-gradient(ellipse at 80% 40%, color-mix(in srgb, var(--c) 10%, transparent), transparent 60%); }
   .hero-in { display: grid; grid-template-columns: 1.1fr 1fr; gap: 40px; align-items: center; padding-top: 48px; padding-bottom: 48px; }
   .topline { display: flex; gap: 16px; align-items: center; }

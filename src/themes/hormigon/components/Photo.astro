@@ -1,0 +1,53 @@
+---
+import { u } from '../base';
+/**
+ * Fotografía real (Wikimedia Commons). Política de la casa: en la pista no hay color.
+ * Se muestra en blanco y negro; al pasar el cursor (o enfocar) aparece el original.
+ */
+import { photos, photoAt } from '../../../data/photos';
+
+interface Props { slug: string; name: string; class?: string }
+const { slug, name, class: cls } = Astro.props;
+const p = photos[slug];
+const widths = p ? [640, 1280, 2000].filter((w, i) => i === 0 || w <= p.w) : [];
+---
+{p && (
+  <figure class:list={['photo', cls]}>
+    <a href={u(p.src)} target="_blank" rel="noopener" class="frame" aria-label={`Abrir la foto de ${name} a tamaño completo`}>
+      <img
+        src={photoAt(p, 1280)}
+        srcset={widths.map((w) => `${photoAt(p, w)} ${Math.min(w, p.w)}w`).join(', ')}
+        sizes="(max-width: 860px) 100vw, 60vw"
+        alt={`Fotografía de ${name}`}
+        width={p.w}
+        height={p.h}
+        loading="lazy"
+        decoding="async"
+      />
+    </a>
+    <figcaption>
+      <span>{p.author}</span>
+      <span>{p.license}</span>
+      <a href={u(p.page)} target="_blank" rel="noopener">Commons ↗</a>
+    </figcaption>
+  </figure>
+)}
+
+<style>
+  .photo { margin: 0; }
+  .frame { display: block; background: #000; overflow: hidden; border: 1px solid var(--line); }
+  img {
+    width: 100%;
+    height: auto;
+    max-height: 70vh;
+    object-fit: contain;
+    display: block;
+    filter: grayscale(1) contrast(1.15) brightness(0.82);
+    transition: filter 1.2s ease;
+  }
+  .frame:hover img, .frame:focus-visible img { filter: none; }
+  figcaption { display: flex; flex-wrap: wrap; gap: 4px 18px; padding-top: 10px; font-size: 10px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--dim); }
+  figcaption a { color: var(--mute); }
+  figcaption a:hover { color: var(--hazard); }
+  @media print { img { filter: grayscale(1); } }
+</style>

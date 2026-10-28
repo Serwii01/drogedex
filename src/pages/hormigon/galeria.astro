@@ -1,0 +1,40 @@
+---
+import { u } from '../../themes/hormigon/base';
+import Layout from '../../themes/hormigon/layouts/Layout.astro';
+import { substances, pad } from '../../data';
+import { photos, photoAt } from '../../data/photos';
+
+const items = substances.filter((s) => photos[s.slug]).map((s, i) => ({ s, p: photos[s.slug], r: ((i * 37) % 7) - 3 }));
+---
+<Layout title="Galería" description="Fotografías reales de las sustancias (Wikimedia Commons, licencias libres).">
+  <section class="wrap top">
+    <p class="lbl">{items.length} fotografías</p>
+    <h1>Galería</h1>
+    <p class="mute intro">Fotografías reales de Wikimedia Commons con licencia libre (dominio público, CC0 y Creative Commons). Muchas proceden de incautaciones de la DEA. En la pista no hay color: pasa el cursor para ver el original.</p>
+  </section>
+  <section class="wrap">
+    <div class="wall">
+      {items.map(({ s, p, r }) => (
+        <a href={u(`/sustancias/${s.slug}`)} class="print" style={`--r:${r * 0.6}deg`}>
+          <img src={photoAt(p, 640)} alt={`Fotografía de ${s.name}`} width={p.w} height={p.h} loading="lazy" decoding="async" />
+          <span class="cap"><b class="st">{s.name}</b><span>#{pad(s.n)}</span></span>
+          <span class="cr">{p.author} · {p.license}</span>
+        </a>
+      ))}
+    </div>
+  </section>
+</Layout>
+
+<style>
+  .top { padding-top: 64px; padding-bottom: 40px; }
+  h1 { margin: 14px 0 22px; }
+  .intro { max-width: 64ch; }
+  .wall { columns: 4 240px; column-gap: 1px; padding-bottom: 120px; }
+  .print { display: block; break-inside: avoid; margin: 0 0 1px; background: var(--soot); position: relative; }
+  img { width: 100%; height: auto; display: block; background: #000; filter: grayscale(1) contrast(1.15) brightness(0.8); transition: filter 1.2s; }
+  .print:hover img { filter: none; }
+  .cap { position: absolute; left: 0; right: 0; bottom: 0; display: flex; justify-content: space-between; align-items: baseline; padding: 30px 12px 10px; background: linear-gradient(transparent, rgba(9, 9, 9, 0.85)); }
+  .cap b { font-size: 12px; letter-spacing: 0.24em; }
+  .cap span { font-size: 10px; color: var(--mute); letter-spacing: 0.2em; }
+  .cr { display: none; }
+</style>

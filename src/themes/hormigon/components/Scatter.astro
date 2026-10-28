@@ -1,0 +1,72 @@
+---
+import { u } from '../base';
+interface Pt { name: string; x: number; y: number; href?: string; hot?: boolean }
+interface Props {
+  pts: Pt[]; xLabel: string; yLabel: string; xMax: number; yMax: number;
+  xLog?: boolean; xMin?: number; xTicks: number[]; yTicks: number[];
+  quadrants?: [string, string, string, string];
+}
+const { pts, xLabel, yLabel, xMax, yMax, xLog = false, xMin = 0, xTicks, yTicks, quadrants } = Astro.props;
+const W = 900, H = 540, L = 64, R = 24, T = 24, B = 56;
+const px = (v: number) => xLog
+  ? L + ((Math.log10(v) - Math.log10(xMin)) / (Math.log10(xMax) - Math.log10(xMin))) * (W - L - R)
+  : L + ((v - xMin) / (xMax - xMin)) * (W - L - R);
+const py = (v: number) => H - B - (v / yMax) * (H - T - B);
+
+// etiquetas sin solapes (empuje vertical voraz)
+const placed: { x: number; y: number; right: boolean; w: number }[] = [];
+const laid = pts
+  .map((p) => ({ ...p, cx: px(p.x), cy: py(p.y) }))
+  .sort((a, b) => a.cy - b.cy)
+  .map((p) => {
+    const right = p.cx > W - 170;
+    const w = p.name.length * 6.8 + 12;
+    let ly = p.cy + 4;
+    const hits = (y: number) => placed.some((q) => q.right === right && Math.abs(q.y - y) < 13 && Math.abs(q.x - p.cx) < Math.max(q.w, w));
+    for (let k = 0; k < 12 && hits(ly); k++) ly += 13;
+    placed.push({ x: p.cx, y: ly, right, w });
+    return { ...p, ly, right };
+  });
+---
+<figure class="sc">
+  <svg viewBox={`0 0 ${W} ${H}`} role="img" aria-label={`${yLabel} frente a ${xLabel}`}>
+    {quadrants && (
+      <g class="q">
+        <text x={L + 12} y={T + 22}>{quadrants[0]}</text>
+        <text x={W - R - 12} y={T + 22} text-anchor="end">{quadrants[1]}</text>
+        <text x={L + 12} y={H - B - 14}>{quadrants[2]}</text>
+        <text x={W - R - 12} y={H - B - 14} text-anchor="end">{quadrants[3]}</text>
+      </g>
+    )}
+    {xTicks.map((t) => <g><line x1={px(t)} x2={px(t)} y1={T} y2={H - B} class="g" /><text x={px(t)} y={H - B + 20} text-anchor="middle" class="tk">{t}</text></g>)}
+    {yTicks.map((t) => <g><line x1={L} x2={W - R} y1={py(t)} y2={py(t)} class="g" /><text x={L - 10} y={py(t) + 4} text-anchor="end" class="tk">{t}</text></g>)}
+    <line x1={L} x2={W - R} y1={H - B} y2={H - B} class="axl" />
+    <line x1={L} x2={L} y1={T} y2={H - B} class="axl" />
+    <text x={(L + W - R) / 2} y={H - 12} text-anchor="middle" class="ax">{xLabel}</text>
+    <text x={16} y={(T + H - B) / 2} text-anchor="middle" class="ax" transform={`rotate(-90 16 ${(T + H - B) / 2})`}>{yLabel}</text>
+    {laid.map((p) => {
+      const g = (
+        <g class:list={['pt', { hot: p.hot }]}>
+          {Math.abs(p.ly - 4 - p.cy) > 2 && <line x1={p.cx} y1={p.cy} x2={p.right ? p.cx - 10 : p.cx + 10} y2={p.ly - 4} class="g" />}
+          <rect x={p.cx - 5} y={p.cy - 5} width="10" height="10" />
+          <text x={p.right ? p.cx - 12 : p.cx + 12} y={p.ly} text-anchor={p.right ? 'end' : 'start'} class="lb">{p.name}</text>
+        </g>
+      );
+      return p.href ? <a href={u(p.href)}>{g}</a> : g;
+    })}
+  </svg>
+</figure>
+
+<style>
+  .sc { margin: 0; overflow-x: auto; }
+  svg { width: 100%; min-width: 600px; height: auto; }
+  .g { stroke: var(--line); }
+  .axl { stroke: var(--mute); }
+  .tk { font-family: var(--mono); font-size: 11px; fill: var(--mute); }
+  .ax { font-family: var(--mono); font-size: 11px; fill: var(--paper); letter-spacing: 1.5px; text-transform: uppercase; }
+  .lb { font-family: var(--mono); font-size: 11px; fill: var(--paper); paint-order: stroke; stroke: var(--soot); stroke-width: 4px; stroke-linejoin: round; }
+  .pt rect { fill: var(--paper); }
+  .pt.hot rect, .pt:hover rect { fill: var(--hazard); }
+  .pt.hot .lb, .pt:hover .lb { fill: var(--hazard); }
+  .q text { font-family: var(--stencil); font-weight: 300; font-size: 16px; fill: var(--line-2); letter-spacing: 1px; }
+</style>

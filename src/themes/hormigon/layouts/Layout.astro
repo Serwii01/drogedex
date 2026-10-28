@@ -1,0 +1,160 @@
+---
+import ThemeSwitch from '../../../components/ThemeSwitch.astro';
+import { rutaSinDiseno } from '../../../data/disenos';
+import { u } from '../base';
+import '../styles/beton.css';
+import { substances, pad } from '../../../data';
+import { familyById } from '../../../data/families';
+import { rooms } from '../../../data/rooms';
+
+interface Props { title?: string; description?: string }
+const { title, description = 'Enciclopedia de sustancias psicoactivas con enfoque de reducción de riesgos. TFG de Psicología.' } = Astro.props;
+const fullTitle = title ? `${title} / DROGEDEX` : 'DROGEDEX';
+const path = Astro.url.pathname.replace(/\/$/, '') || '/';
+
+
+const index = [
+  ...substances.map((s) => ({ t: s.name, s: `#${pad(s.n)} · ${familyById[s.family].name}`, h: u(`/sustancias/${s.slug}`), k: [s.name, s.symbol, ...s.aka].join(' ') })),
+  ...rooms.map((r) => ({ t: r.label, s: r.sub, h: r.href, k: r.label })),
+];
+---
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>{fullTitle}</title>
+    <meta name="description" content={description} />
+    <meta name="theme-color" content="#090909" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Inter+Tight:wght@200;300;400&family=IBM+Plex+Mono:wght@300;400;500&display=swap" rel="stylesheet" />
+    <link rel="canonical" href={new URL(rutaSinDiseno(Astro.url.pathname), Astro.site).href} />
+  </head>
+  <body>
+    <svg width="0" height="0" style="position:absolute" aria-hidden="true"><filter id="rough"><feTurbulence type="fractalNoise" baseFrequency=".9" numOctaves="2" result="n"/><feDisplacementMap in="SourceGraphic" in2="n" scale="2.5"/></filter></svg>
+    <header class="top">
+      <div class="wrap bar">
+        <a href={u('/')} class="logo">Drogedex</a>
+        <div class="acts">
+          <button class="ib" id="open-search" type="button" aria-label="Buscar (tecla /)"><span>Buscar</span><kbd>/</kbd></button>
+          <a class="ib sos" href={u('/emergencias')}>112</a>
+          <button class="ib" id="open-menu" type="button" aria-expanded="false" aria-controls="menu">Salas</button>
+        </div>
+      </div>
+      
+    </header>
+
+    <div class="menu" id="menu" hidden>
+      <div class="wrap">
+        <div class="menu-top">
+          <span class="lbl">Line-up · {rooms.length} salas</span>
+          <button class="ib" data-close type="button">Cerrar ✕</button>
+        </div>
+        <ol class="lineup">
+          {rooms.map((r, i) => (
+            <li class:list={[{ on: path.startsWith(u(r.href)) }]}>
+              <a href={u(r.href)}>
+                <span class="n">Sala {String(i + 1).padStart(2, '0')}</span>
+                <span class="t st">{r.label}</span>
+                <span class="s">{r.sub}</span>
+              </a>
+            </li>
+          ))}
+        </ol>
+      </div>
+    </div>
+
+    <div class="search" id="search" hidden>
+      <div class="wrap">
+        <div class="menu-top">
+          <span class="lbl">Buscar en Drogedex</span>
+          <button class="ib" data-close type="button">Esc ✕</button>
+        </div>
+        <input id="sq" type="search" placeholder="sustancia, apodo, sala…" autocomplete="off" />
+        <ul id="sr" class="results"></ul>
+      </div>
+    </div>
+
+    <main><slot /></main>
+
+    <footer class="foot">
+      <div class="wrap">
+        <p class="warn">
+          <span class="stamp">Aviso</span><br />
+          Proyecto académico con fines educativos y de reducción de riesgos. No promueve el consumo ni incluye dosis.
+          No sustituye el consejo médico. Emergencias: <b>112</b>. Análisis de sustancias en España: <a href="https://energycontrol-international.org" target="_blank" rel="noopener">Energy Control</a>.
+        </p>
+        <div class="row lbl">
+          <span>Drogedex — TFG Psicología</span>
+          <span>Sin color en la pista · sin juicio en la puerta</span>
+        </div>
+      </div>
+    </footer>
+
+    <script is:inline define:vars={{ index }}>
+      const $ = (id) => document.getElementById(id);
+      const menu = $('menu'), search = $('search'), sq = $('sq'), sr = $('sr');
+      const norm = (s) => s.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase();
+      function open(el) { el.hidden = false; document.body.style.overflow = 'hidden'; if (el === search) { sq.value = ''; render(''); setTimeout(() => sq.focus(), 0); } $('open-menu').setAttribute('aria-expanded', String(el === menu)); }
+      function close() { menu.hidden = true; search.hidden = true; document.body.style.overflow = ''; $('open-menu').setAttribute('aria-expanded', 'false'); }
+      function render(q) {
+        const n = norm(q.trim());
+        const hits = (n ? index.filter((x) => norm(x.k + ' ' + x.t).includes(n)) : index.slice(-12)).slice(0, 12);
+        sr.innerHTML = hits.map((x, i) => `<li><a href="${x.h}" ${i === 0 ? 'class="first"' : ''}><b>${x.t}</b><span>${x.s}</span></a></li>`).join('') || '<li class="none">Nada en esta sala.</li>';
+      }
+      $('open-menu').onclick = () => (menu.hidden ? open(menu) : close());
+      $('open-search').onclick = () => open(search);
+      document.querySelectorAll('[data-close]').forEach((b) => (b.onclick = close));
+      sq.addEventListener('input', () => render(sq.value));
+      sq.addEventListener('keydown', (e) => { if (e.key === 'Enter') { const a = sr.querySelector('a'); if (a) location.href = a.href; } });
+      document.addEventListener('keydown', (e) => {
+        const typing = /input|textarea|select/i.test(document.activeElement?.tagName || '');
+        if (e.key === 'Escape') close();
+        else if (e.key === '/' && !typing) { e.preventDefault(); open(search); }
+      });
+    </script>
+
+    <style>
+      .top { position: sticky; top: 0; z-index: 60; border-bottom: 1px solid var(--line); background: rgba(9, 9, 9, 0.92); backdrop-filter: blur(6px); }
+      .bar { display: flex; align-items: center; justify-content: space-between; height: 60px; gap: 16px; }
+      .logo { font-family: var(--stencil); font-weight: 300; font-size: 14px; letter-spacing: 0.5em; text-transform: uppercase; }
+      .logo:hover { color: var(--hazard); }
+      .acts { display: flex; gap: 6px; }
+      .ib { background: transparent; border: 1px solid var(--line-2); color: var(--paper); font-family: var(--mono); font-size: 11px; letter-spacing: 0.14em; text-transform: uppercase; padding: 7px 12px; cursor: pointer; display: inline-flex; gap: 8px; align-items: center; }
+      .ib:hover { border-color: var(--paper); }
+      .ib kbd { font-family: var(--mono); border: 1px solid var(--line-2); padding: 0 5px; color: var(--mute); }
+      .sos { color: var(--hazard); }
+      .sos:hover { background: var(--hazard); color: var(--ink); }
+      @media (max-width: 520px) { .ib span { display: none; } .logo { font-size: 12px; letter-spacing: 0.35em; } }
+
+      .menu, .search { position: fixed; inset: 0; z-index: 80; background: var(--soot); overflow-y: auto; padding: 24px 0 60px; }
+      .menu-top { display: flex; justify-content: space-between; align-items: center; margin-bottom: 32px; }
+      .lineup { list-style: none; padding: 0; margin: 0; }
+      .lineup a { display: grid; grid-template-columns: 100px 1fr auto; gap: 16px; align-items: baseline; padding: 10px 0; border-bottom: 1px dashed var(--line-2); }
+      .lineup .n { font-size: 11px; color: var(--mute); letter-spacing: 0.12em; text-transform: uppercase; }
+      .lineup .t { font-size: clamp(22px, 3.4vw, 40px); }
+      .lineup .s { font-size: 12px; color: var(--mute); text-align: right; }
+      .lineup a:hover .t, .lineup .on .t { color: var(--hazard); }
+      @media (max-width: 640px) { .lineup a { grid-template-columns: 1fr; gap: 0; } .lineup .s { text-align: left; } }
+
+      #sq { width: 100%; background: transparent; border: 0; border-bottom: 1px solid var(--line-2); color: var(--paper); font-family: var(--stencil); font-weight: 200; letter-spacing: 0.14em; font-size: clamp(24px, 4vw, 44px); text-transform: uppercase; padding: 8px 0; outline: none; }
+      #sq:focus { border-color: var(--hazard); }
+      .results { list-style: none; padding: 0; margin: 20px 0 0; }
+      .results :global(a) { display: flex; justify-content: space-between; gap: 16px; padding: 12px 0; border-bottom: 1px dashed var(--line-2); }
+      .results :global(b) { font-weight: 500; font-size: 16px; }
+      .results :global(span) { color: var(--mute); font-size: 12px; }
+      .results :global(a:hover b), .results :global(a.first b) { color: var(--hazard); }
+      .results :global(.none) { color: var(--mute); padding: 12px 0; }
+
+      .foot { border-top: 1px solid var(--line); padding: 56px 0 32px; }
+      .warn { max-width: 80ch; color: var(--mute); margin: 0 0 40px; }
+      .warn .stamp { margin-right: 14px; font-size: 14px; }
+      .warn b { color: var(--paper); }
+      .warn a { color: var(--paper); text-decoration: underline; text-underline-offset: 3px; }
+      .row { display: flex; justify-content: space-between; flex-wrap: wrap; gap: 12px; }
+    </style>
+    <ThemeSwitch actual="hormigon" />
+  </body>
+</html>

@@ -1,0 +1,65 @@
+---
+import Layout from '../../themes/nave/layouts/Layout.astro';
+import Bars from '../../themes/nave/components/Bars.astro';
+import Scatter from '../../themes/nave/components/Scatter.astro';
+import Timeline from '../../themes/nave/components/Timeline.astro';
+import { substances } from '../../data';
+import { nutt2010, unodcUsers, edades2022, cdc2022, gable } from '../../data/stats';
+
+const gablePts = gable.map((g) => ({ name: g.name, x: g.safety, y: g.dep, href: `/sustancias/${g.slug}`, hot: g.slug === 'alcohol' }));
+const nuttPts = substances.map((s) => ({ name: s.name, x: s.harm.dependence, y: s.harm.physical, href: `/sustancias/${s.slug}`, hot: s.harm.src === 'nutt2007' }));
+const durRows = substances.filter((s) => s.duration).sort((a, b) => a.duration!.total - b.duration!.total)
+  .map((s) => ({ name: s.name, d: s.duration!, href: `/sustancias/${s.slug}` }));
+---
+<Layout title="Datos" description="Gráficos de daño, prevalencia, mortalidad y duración.">
+  <section class="wrap top">
+    <p class="lbl">Sala 09 · fuentes</p>
+    <h1>Datos</h1>
+    <p class="mute intro">Material para el marco teórico. Cita siempre la fuente original indicada en cada gráfico.</p>
+  </section>
+
+  <section class="block"><div class="wrap">
+    <div class="head"><span class="lbl">01 · Nutt et al. 2010</span><div><h2>Ranking de daño</h2><p>Daño global (0–100) con 16 criterios, a quien consume y a terceros. <i>The Lancet</i>.</p></div></div>
+    <Bars rows={nutt2010.map((r, i) => ({ ...r, hot: i === 0 }))} max={100} />
+  </div></section>
+
+  <section class="block"><div class="wrap">
+    <div class="head"><span class="lbl">02 · Gable 2004/06</span><div><h2>Toxicidad vs. adicción</h2><p>Margen de seguridad (log) frente a potencial de dependencia. Posiciones aproximadas.</p></div></div>
+    <Scatter pts={gablePts} xLabel="Margen de seguridad →" yLabel="Dependencia →" xLog xMin={3} xMax={2000} xTicks={[5, 10, 20, 50, 100, 200, 500, 1000]} yTicks={[0, 1, 2, 3, 4, 5]} yMax={5} quadrants={['TÓXICAS Y ADICTIVAS', 'SEGURAS, ADICTIVAS', 'TÓXICAS, POCO ADICTIVAS', 'MENOR RIESGO']} />
+  </div></section>
+
+  <section class="block"><div class="wrap">
+    <div class="head"><span class="lbl">03 · Nutt et al. 2007</span><div><h2>Físico vs. dependencia</h2><p>En naranja, valores publicados; en blanco, estimaciones editoriales con la misma escala.</p></div></div>
+    <Scatter pts={nuttPts} xLabel="Dependencia (0–3) →" yLabel="Daño físico (0–3) →" xMin={0} xMax={3} yMax={3} xTicks={[0, 0.5, 1, 1.5, 2, 2.5, 3]} yTicks={[0, 0.5, 1, 1.5, 2, 2.5, 3]} />
+  </div></section>
+
+  <section class="block"><div class="wrap two">
+    <div>
+      <div class="head col"><span class="lbl">04 · UNODC 2024</span><div><h2>Mundo</h2><p>Consumidores en el último año, millones (2022).</p></div></div>
+      <Bars rows={unodcUsers} unit=" M" />
+    </div>
+    <div>
+      <div class="head col"><span class="lbl">05 · EDADES 2022</span><div><h2>España</h2><p>Prevalencia últimos 12 meses, 15–64 años (%).</p></div></div>
+      <Bars rows={edades2022} unit=" %" decimals={1} max={100} />
+    </div>
+  </div></section>
+
+  <section class="block"><div class="wrap">
+    <div class="head"><span class="lbl">06 · CDC 2023</span><div><h2>Sobredosis EE. UU.</h2><p>Muertes en 2022 por sustancia implicada.</p></div></div>
+    <Bars rows={cdc2022.map((r, i) => ({ ...r, hot: i === 0 }))} />
+  </div></section>
+
+  <section class="block"><div class="wrap">
+    <div class="head"><span class="lbl">07 · Tiempo</span><div><h2>Duración</h2><p>De la más breve a la más larga, escala logarítmica.</p></div></div>
+    <Timeline log rows={durRows} />
+  </div></section>
+</Layout>
+
+<style>
+  .top { padding-top: 56px; padding-bottom: 32px; }
+  h1 { margin: 10px 0 18px; }
+  .intro { max-width: 70ch; }
+  .two { display: grid; grid-template-columns: 1fr 1fr; gap: 56px; }
+  .head.col { grid-template-columns: 1fr; gap: 4px; }
+  @media (max-width: 900px) { .two { grid-template-columns: 1fr; } }
+</style>

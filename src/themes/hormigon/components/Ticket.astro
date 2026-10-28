@@ -1,0 +1,42 @@
+---
+import { u } from '../base';
+/** Sustancia como losa: número, símbolo, nombre. Nada más. */
+import { familyById } from '../../../data/families';
+import { paper } from '../lib/tone';
+import { pad } from '../../../data';
+import type { Substance } from '../../../data/types';
+
+interface Props { s: Substance & { n: number } }
+const { s } = Astro.props;
+const f = familyById[s.family];
+---
+<a
+  href={u(`/sustancias/${s.slug}`)}
+  class="ticket"
+  style={`--c:${paper[s.family]}`}
+  data-family={s.family}
+  data-search={[s.name, s.symbol, ...s.aka, f.name].join(' ').toLowerCase()}
+>
+  <span class="top"><span>{pad(s.n)}</span><span>{f.code}</span></span>
+  <span class="sym">{s.symbol}</span>
+  <span class="nm">{s.name}</span>
+</a>
+
+<style>
+  .ticket {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    aspect-ratio: 1;
+    padding: 14px 16px;
+    background: var(--beton), var(--concrete);
+    border: 1px solid var(--line);
+    transition: border-color 0.4s, background-color 0.4s;
+  }
+  .ticket::before { content: ''; position: absolute; left: -1px; top: -1px; bottom: -1px; width: 2px; background: var(--c); opacity: 0.7; }
+  .ticket:hover { border-color: var(--paper); }
+  .top { display: flex; justify-content: space-between; font-size: 10px; letter-spacing: 0.22em; color: var(--mute); }
+  .sym { margin: auto 0; font-family: var(--stencil); font-weight: 200; font-size: clamp(32px, 7.7vw, 54px); letter-spacing: 0.08em; line-height: 1; color: var(--paper); }
+  .nm { font-size: 10px; letter-spacing: 0.22em; text-transform: uppercase; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: var(--mute); transition: color 0.4s; }
+  .ticket:hover .nm { color: var(--hazard); }
+</style>

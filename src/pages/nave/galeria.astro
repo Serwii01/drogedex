@@ -1,0 +1,42 @@
+---
+import { u } from '../../themes/nave/base';
+import Layout from '../../themes/nave/layouts/Layout.astro';
+import { substances, pad } from '../../data';
+import { photos, photoAt } from '../../data/photos';
+
+const items = substances.filter((s) => photos[s.slug]).map((s, i) => ({ s, p: photos[s.slug], r: ((i * 37) % 7) - 3 }));
+---
+<Layout title="Galería" description="Fotografías reales de las sustancias (Wikimedia Commons, licencias libres).">
+  <section class="wrap top">
+    <p class="lbl">Sala 13 · {items.length} copias</p>
+    <h1>Galería</h1>
+    <p class="mute intro">Fotografías reales de Wikimedia Commons con licencia libre (dominio público, CC0 y Creative Commons). Muchas proceden de incautaciones de la DEA. Pulsa una foto para abrir su ficha.</p>
+  </section>
+  <section class="wrap">
+    <div class="wall">
+      {items.map(({ s, p, r }) => (
+        <a href={u(`/sustancias/${s.slug}`)} class="print" style={`--r:${r * 0.6}deg`}>
+          <img src={photoAt(p, 640)} alt={`Fotografía de ${s.name}`} width={p.w} height={p.h} loading="lazy" decoding="async" />
+          <span class="cap"><b class="st">{s.name}</b><span>#{pad(s.n)}</span></span>
+          <span class="cr">{p.author} · {p.license}</span>
+        </a>
+      ))}
+    </div>
+  </section>
+</Layout>
+
+<style>
+  .top { padding-top: 56px; padding-bottom: 36px; }
+  h1 { margin: 10px 0 18px; }
+  .intro { max-width: 70ch; }
+  .wall { columns: 4 240px; column-gap: 22px; padding-bottom: 100px; }
+  .print { display: block; break-inside: avoid; margin: 0 0 26px; background: var(--paper); color: var(--ink); padding: 10px 10px 8px; transform: rotate(var(--r)); box-shadow: 0 12px 28px rgba(0, 0, 0, 0.5); position: relative; transition: transform 0.15s; }
+  .print::before { content: ''; position: absolute; top: -10px; left: 50%; width: 70px; height: 20px; transform: translateX(-50%) rotate(2deg); background: rgba(222, 214, 188, 0.62); clip-path: polygon(2% 0, 98% 4%, 100% 50%, 97% 100%, 3% 96%, 0 50%); }
+  .print:hover { transform: rotate(0) scale(1.02); z-index: 2; }
+  .print:hover b { color: #c3360a; }
+  img { width: 100%; height: auto; display: block; background: #000; filter: saturate(0.85); }
+  .cap { display: flex; justify-content: space-between; align-items: baseline; padding-top: 8px; }
+  .cap b { font-size: 22px; font-weight: 900; }
+  .cap span { font-size: 11px; color: #5d594f; }
+  .cr { display: block; font-size: 10px; color: #5d594f; margin-top: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+</style>

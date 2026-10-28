@@ -1,0 +1,46 @@
+---
+import { u } from '../../themes/nave/base';
+import Layout from '../../themes/nave/layouts/Layout.astro';
+import Matrix from '../../themes/nave/components/Matrix.astro';
+import { comboKeys, risk, riskInfo, notes } from '../../themes/nave/data/interactions';
+import type { ComboKey } from '../../data/types';
+
+const label = Object.fromEntries(comboKeys.map((k) => [k.key, k.label]));
+const crit = Object.entries(notes).map(([k, t]) => {
+  const [a, b] = k.split('+') as [ComboKey, ComboKey];
+  return { a: label[a], b: label[b], t, r: risk(a, b)! };
+});
+---
+<Layout title="Matriz de combinaciones" description="Tabla de interacciones entre sustancias.">
+  <section class="wrap top">
+    <p class="lbl">Sala 04 · {comboKeys.length} × {comboKeys.length}</p>
+    <h1>Matriz</h1>
+    <p class="mute intro">Riesgo de combinar las sustancias y fármacos más habituales. La mayoría de muertes por sobredosis implican más de una sustancia. Adaptada de la TripSit Drug Combinations Chart. Para comprobar varias a la vez: <a href={u('/mezclas')} class="hz">comprobador de mezclas →</a></p>
+  </section>
+  <section class="wrap"><Matrix /></section>
+  <section class="block">
+    <div class="wrap">
+      <div class="head"><span class="lbl">Críticas</span><div><h2>Explicadas</h2></div></div>
+      <div class="crit">
+        {crit.map((c) => (
+          <div style={`--r:${riskInfo[c.r].color}`}>
+            <span class="tag">{riskInfo[c.r].label}</span>
+            <h3>{c.a} + {c.b}</h3>
+            <p>{c.t}</p>
+          </div>
+        ))}
+      </div>
+    </div>
+  </section>
+</Layout>
+
+<style>
+  .top { padding-top: 56px; padding-bottom: 32px; }
+  h1 { margin: 10px 0 18px; }
+  .intro { max-width: 76ch; }
+  .crit { display: grid; grid-template-columns: repeat(auto-fill, minmax(290px, 1fr)); gap: 28px 32px; }
+  .crit > div { border-top: 3px solid var(--r); padding-top: 12px; }
+  .tag { font-size: 10px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--r); }
+  .crit h3 { font-size: 28px; margin: 6px 0 8px; }
+  .crit p { margin: 0; color: var(--mute); font-size: 13px; }
+</style>

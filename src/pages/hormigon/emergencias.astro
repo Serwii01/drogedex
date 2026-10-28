@@ -1,0 +1,99 @@
+---
+import Layout from '../../themes/hormigon/layouts/Layout.astro';
+import { emergencies } from '../../data/extra';
+---
+<Layout title="Emergencias" description="Qué hacer ante una intoxicación o sobredosis.">
+  <section class="wrap top">
+    <p class="lbl">Sala 11 · primeros auxilios</p>
+    <h1>Emer<br />gencias</h1>
+    <a href="tel:112" class="call st">Llama al 112</a>
+    <p class="mute intro">Los servicios sanitarios están para atender, no para juzgar. Di qué ha tomado, cuánto y cuándo. Guarda los restos de la sustancia si los hay.</p>
+  </section>
+
+  <section class="block">
+    <div class="wrap two">
+      <div>
+        <p class="lbl">Posición lateral de seguridad</p>
+        <h2>Si respira pero no responde</h2>
+        <ol class="steps">
+          <li>Arrodíllate a su lado. Brazo más cercano en ángulo recto, palma hacia arriba.</li>
+          <li>Lleva el otro brazo cruzando el pecho; el dorso de la mano contra su mejilla.</li>
+          <li>Dobla la rodilla más lejana, con el pie apoyado en el suelo.</li>
+          <li>Tira de la rodilla hacia ti para girarla de lado.</li>
+          <li>Inclina la cabeza hacia atrás para abrir la vía aérea. Vigila la respiración hasta que llegue ayuda.</li>
+        </ol>
+      </div>
+      <figure class="pls xerox tape">
+        <svg viewBox="0 0 620 300" role="img" aria-label="Esquema de la posición lateral de seguridad">
+          <line x1="20" y1="250" x2="600" y2="250" class="floor" />
+          <circle cx="110" cy="180" r="38" class="b" />
+          <path d="M150 196 L360 214" class="b" />
+          <path d="M360 214 L560 236" class="b" />
+          <path d="M350 210 L420 150 L470 236" class="b k" />
+          <path d="M200 200 L160 240 L190 246" class="b" />
+          <path d="M210 200 L170 168 L126 196" class="b k" />
+          <circle cx="420" cy="150" r="7" class="pt" />
+          <circle cx="132" cy="196" r="7" class="pt" />
+          <path d="M70 160 Q60 130 86 120" class="arr" marker-end="url(#pa)" />
+          <defs><marker id="pa" viewBox="0 0 10 10" refX="6" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0 L10 5 L0 10z" fill="var(--hazard)" /></marker></defs>
+          <text x="20" y="105" class="t">1 · CABEZA ATRÁS</text>
+          <text x="130" y="290" class="t">2 · MANO BAJO LA MEJILLA</text>
+          <text x="400" y="118" class="t">3 · RODILLA A 90°</text>
+        </svg>
+        <figcaption class="lbl">Esquema simplificado · vista lateral</figcaption>
+      </figure>
+    </div>
+  </section>
+
+  <section class="block">
+    <div class="wrap">
+      <div class="head"><span class="lbl">Por familia</span><div><h2>Qué hacer</h2></div></div>
+      <div class="cards">
+        {emergencies.map((e) => (
+          <div class="card">
+            <h3>{e.k}</h3>
+            <p class="lbl">Señales de alarma</p>
+            <ul class="dash">{e.signs.map((x) => <li>{x}</li>)}</ul>
+            <p class="lbl hz">Haz</p>
+            <ol class="do">{e.do.map((x) => <li>{x}</li>)}</ol>
+            <p class="lbl">No hagas</p>
+            <ul class="dont">{e.dont.map((x) => <li>{x}</li>)}</ul>
+          </div>
+        ))}
+      </div>
+    </div>
+  </section>
+</Layout>
+
+<style>
+  .top { padding-top: 56px; padding-bottom: 40px; }
+  h1 { margin: 10px 0 26px; }
+  .call { display: inline-block; background: var(--hazard); color: var(--ink); font-size: clamp(48px, 9vw, 120px); font-weight: 300; padding: 6px 26px 10px; line-height: 0.9; margin-bottom: 24px; }
+  .call:hover { animation: strobe 0.15s steps(2) 3; }
+  .intro { max-width: 70ch; }
+  .two { display: grid; grid-template-columns: 1fr 1fr; gap: clamp(32px, 6vw, 80px); align-items: start; }
+  @media (max-width: 900px) { .two { grid-template-columns: 1fr; } }
+  h2 { margin: 12px 0 18px; }
+  .steps { padding: 0; margin: 0; list-style: none; counter-reset: s; }
+  .steps li { counter-increment: s; display: grid; grid-template-columns: 44px 1fr; padding: 12px 0; border-bottom: 1px dashed var(--line-2); }
+  .steps li::before { content: counter(s); font-family: var(--stencil); font-weight: 300; font-size: clamp(19px, 4.6vw, 32px); color: var(--hazard); line-height: 0.9; }
+  .pls { margin: 0; padding: 18px;  }
+  .pls svg { width: 100%; height: auto; }
+  .floor { stroke: var(--dim); stroke-dasharray: 6 6; }
+  .b { fill: none; stroke: var(--paper); stroke-width: 14; stroke-linecap: round; stroke-linejoin: round; }
+  .k { stroke: var(--hazard); }
+  circle.b { stroke-width: 10; }
+  .pt { fill: var(--paper); }
+  .arr { fill: none; stroke: var(--hazard); stroke-width: 3; }
+  .t { font-family: var(--mono); font-size: 12px; font-weight: 400; fill: var(--paper); letter-spacing: 1px; }
+  .cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(280px, 100%), 1fr)); gap: 1px; background: var(--line); border: 1px solid var(--line); }
+  .card { background: var(--soot); padding: 24px; }
+  .card h3 { font-size: clamp(18px, 4.3vw, 30px); margin-bottom: 14px; }
+  .card .lbl { margin: 16px 0 6px; }
+  .do { padding-left: 20px; margin: 0; }
+  .do li { padding: 5px 0; }
+  .do li::marker { color: var(--hazard); font-weight: 500; }
+  .dont { list-style: none; padding: 0; margin: 0; color: var(--mute); }
+  .dont li { padding: 4px 0 4px 22px; position: relative; text-decoration: line-through; text-decoration-color: var(--hazard); }
+  .dont li::before { content: '✕'; position: absolute; left: 2px; color: var(--hazard); text-decoration: none; }
+</style>

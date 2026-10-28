@@ -1,0 +1,18 @@
+---
+import { u } from '../../themes/nave/base';
+import Layout from '../../themes/nave/layouts/Layout.astro';
+---
+<Layout title="404">
+  <section class="wrap e">
+    <span class="stamp">Acceso denegado</span>
+    <h1>404</h1>
+    <p class="mute">El portero dice que esta sala no existe.</p>
+    <a href={u('/')} class="btn fill">← Volver a la pista</a>
+  </section>
+</Layout>
+
+<style>
+  .e { padding-top: 100px; padding-bottom: 160px; }
+  h1 { font-size: clamp(140px, 32vw, 420px); margin: 20px 0 10px; }
+  p { margin-bottom: 28px; }
+</style>

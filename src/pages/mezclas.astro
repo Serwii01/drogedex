@@ -1,0 +1,139 @@
+---
+import Layout from '../layouts/Layout.astro';
+import { substances } from '../data';
+import { comboKeys, risk, riskInfo, note } from '../data/interactions';
+import type { ComboKey } from '../data/types';
+
+const meds = [
+  { slug: 'imao', name: 'IMAO (antidepresivos, ayahuasca)', combo: 'imao' as ComboKey },
+  { slug: 'isrs', name: 'ISRS (fluoxetina, sertralina…)', combo: 'isrs' as ComboKey },
+  { slug: 'litio', name: 'Litio', combo: 'litio' as ComboKey },
+];
+const opts = [
+  ...substances.filter((s) => s.combo).map((s) => ({ slug: s.slug, name: s.name, combo: s.combo! })),
+  ...meds,
+];
+const without = substances.filter((s) => !s.combo).map((s) => s.name);
+
+const table: Record<string, { r: string; n: string }> = {};
+for (const a of comboKeys) for (const b of comboKeys) {
+  if (a.key === b.key) continue;
+  table[`${a.key}|${b.key}`] = { r: risk(a.key, b.key)!, n: note(a.key, b.key) ?? '' };
+}
+const depress = ['opi', 'benzo', 'ghb', 'alc', 'tram'];
+---
+<Layout title="Comprobador de mezclas" description="Elige varias sustancias y comprueba el riesgo de combinarlas.">
+  <section class="wrap head">
+    <span class="label">Comprobador / 2–5 sustancias</span>
+    <h1>¿Se puede<br /><span class="red">mezclar?</span></h1>
+    <p class="lede">
+      Elige entre 2 y 5 sustancias o fármacos. Se evalúa cada par y se muestra el peor caso.
+      Herramienta orientativa basada en la matriz adaptada de TripSit: no garantiza seguridad. <a href="/combinaciones" class="acid">Ver la tabla completa →</a>
+    </p>
+  </section>
+
+  <section class="section">
+    <div class="wrap">
+      <div class="section-head">
+        <span class="idx">01 / ELIGE</span>
+        <div><h2>Sustancias</h2><p>Sin datos de interacción: {without.join(', ')}.</p></div>
+      </div>
+      <div class="pick" id="pick">
+        {opts.map((o) => <button type="button" class="opt" data-slug={o.slug} data-combo={o.combo} aria-pressed="false">{o.name}</button>)}
+      </div>
+      <div class="row-btns"><button class="btn" id="clear" type="button">Vaciar</button></div>
+    </div>
+  </section>
+
+  <section class="section">
+    <div class="wrap res">
+      <div class="verdict panel" id="verdict">
+        <span class="idx">02 / RESULTADO</span>
+        <p class="big" id="v-label">Elige al menos dos</p>
+        <p id="v-text" class="vt">—</p>
+      </div>
+      <ol class="pairs" id="pairs"></ol>
+    </div>
+  </section>
+</Layout>
+
+<script define:vars={{ table, riskInfo, depress }}>
+  const order = ['X', 'U', 'C', 'S', 'N', 'D'];
+  const pick = document.getElementById('pick');
+  const btns = [...pick.querySelectorAll('.opt')];
+  const $ = (id) => document.getElementById(id);
+
+  function pairRisk(a, b) {
+    if (a === b) {
+      return depress.includes(a)
+        ? { r: 'X', n: 'Dos sustancias de la misma clase depresora: la depresión respiratoria se suma.' }
+        : { r: 'C', n: 'Misma clase farmacológica: efectos y riesgos se suman; tolerancia cruzada.' };
+    }
+    return table[`${a}|${b}`];
+  }
+
+  function update() {
+    const sel = btns.filter((b) => b.getAttribute('aria-pressed') === 'true');
+    btns.forEach((b) => (b.disabled = sel.length >= 5 && b.getAttribute('aria-pressed') !== 'true'));
+    const url = new URL(location.href);
+    url.searchParams.set('s', sel.map((b) => b.dataset.slug).join(','));
+    history.replaceState(null, '', sel.length ? url : location.pathname);
+
+    const pairs = [];
+    for (let i = 0; i < sel.length; i++) for (let j = i + 1; j < sel.length; j++) {
+      const p = pairRisk(sel[i].dataset.combo, sel[j].dataset.combo);
+      pairs.push({ a: sel[i].textContent, b: sel[j].textContent, ...p });
+    }
+    pairs.sort((x, y) => order.indexOf(x.r) - order.indexOf(y.r));
+    const v = $('verdict');
+    if (pairs.length === 0) {
+      $('v-label').textContent = 'Elige al menos dos';
+      $('v-text').textContent = '—';
+      v.style.removeProperty('--r');
+      $('pairs').innerHTML = '';
+      return;
+    }
+    const worst = riskInfo[pairs[0].r];
+    $('v-label').textContent = worst.label;
+    $('v-text').textContent = worst.text;
+    v.style.setProperty('--r', worst.color);
+    $('pairs').innerHTML = pairs.map((p) => {
+      const info = riskInfo[p.r];
+      return `<li style="--r:${info.color}"><span class="tg">${info.short}</span><div><b>${p.a} + ${p.b}</b><span class="rl">${info.label}</span>${p.n ? `<p>${p.n}</p>` : ''}</div></li>`;
+    }).join('');
+  }
+
+  btns.forEach((b) => b.addEventListener('click', () => {
+    b.setAttribute('aria-pressed', String(b.getAttribute('aria-pressed') !== 'true'));
+    update();
+  }));
+  $('clear').onclick = () => { btns.forEach((b) => b.setAttribute('aria-pressed', 'false')); update(); };
+
+  const pre = new URLSearchParams(location.search).get('s');
+  if (pre) pre.split(',').forEach((s) => btns.find((b) => b.dataset.slug === s)?.setAttribute('aria-pressed', 'true'));
+  update();
+</script>
+
+<style>
+  .head { padding-top: 56px; padding-bottom: 32px; }
+  h1 { font-size: clamp(56px, 11vw, 160px); margin: 12px 0 24px; }
+  .lede { max-width: 72ch; color: var(--mute); }
+  .pick { display: flex; flex-wrap: wrap; gap: 6px; }
+  .opt { background: var(--bg-2); border: 1px solid var(--line-2); color: var(--fg); font-family: var(--mono); font-size: 12px; padding: 8px 12px; cursor: pointer; }
+  .opt:hover { border-color: var(--acid); color: var(--acid); }
+  .opt[aria-pressed='true'] { background: var(--acid); color: #000; border-color: var(--acid); }
+  .opt:disabled { opacity: 0.3; cursor: not-allowed; }
+  .row-btns { margin-top: 20px; }
+  .res { display: grid; grid-template-columns: 400px 1fr; gap: 40px; align-items: start; }
+  @media (max-width: 860px) { .res { grid-template-columns: 1fr; } }
+  .verdict { padding: 24px; border-top: 4px solid var(--r, var(--line-2)); }
+  .idx { display: block; font-size: 11px; color: var(--acid); letter-spacing: 0.14em; }
+  .big { font-family: var(--display); font-weight: 900; font-stretch: 125%; text-transform: uppercase; font-size: 40px; line-height: 0.95; margin: 16px 0 12px; color: var(--r, var(--fg)); }
+  .vt { margin: 0; font-size: 13px; color: var(--mute); }
+  .pairs { list-style: none; padding: 0; margin: 0; display: grid; gap: 8px; }
+  .pairs :global(li) { display: grid; grid-template-columns: 48px 1fr; gap: 12px; padding: 12px; border: 1px solid var(--line); border-left: 3px solid var(--r); background: var(--bg-2); }
+  .pairs :global(.tg) { background: var(--r); color: #000; font-weight: 700; font-size: 10px; height: 26px; display: grid; place-items: center; }
+  .pairs :global(b) { display: block; font-family: var(--display); font-weight: 900; font-stretch: 112%; text-transform: uppercase; font-size: 16px; }
+  .pairs :global(.rl) { font-size: 11px; color: var(--r); letter-spacing: 0.08em; text-transform: uppercase; }
+  .pairs :global(p) { margin: 6px 0 0; color: var(--mute); font-size: 12px; }
+</style>

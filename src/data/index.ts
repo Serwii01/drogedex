@@ -20,7 +20,8 @@ export const countries: Record<string, string> = {
   ES: 'España', FR: 'Francia', DE: 'Alemania', NL: 'Países Bajos', GB: 'Reino Unido', US: 'EE. UU.',
   CA: 'Canadá', AU: 'Australia', CO: 'Colombia', BR: 'Brasil', PL: 'Polonia', SA: 'Arabia Saudí',
   CZ: 'Chequia', TH: 'Tailandia', IT: 'Italia', FI: 'Finlandia', EG: 'Egipto', NG: 'Nigeria',
-  PE: 'Perú', HK: 'Hong Kong', NO: 'Noruega', UY: 'Uruguay',
+  PE: 'Perú', HK: 'Hong Kong', NO: 'Noruega', UY: 'Uruguay', AF: 'Afganistán', MM: 'Myanmar',
+  MA: 'Marruecos', MX: 'México', BO: 'Bolivia', IN: 'India', CN: 'China',
 };
 
 export const pad = (n: number) => String(n).padStart(3, '0');
